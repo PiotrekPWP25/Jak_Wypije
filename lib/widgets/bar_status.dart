@@ -2,40 +2,36 @@ import 'package:flutter/material.dart';
 
 import '../core/theme/app_colors.dart';
 import '../data/models/bar.dart';
-import '../data/models/fundraiser.dart';
+import '../data/models/city_zone.dart';
 
-enum BarStatus { regular, hiddenGem, rescuing, saved }
+enum BarStatus { regular, hiddenGem, crowded, inRoute }
 
-BarStatus barStatusOf(Bar bar, Fundraiser? fundraiser) {
-  if (fundraiser != null) {
-    return fundraiser.isSaved ? BarStatus.saved : BarStatus.rescuing;
-  }
+BarStatus barStatusOf(Bar bar, {bool inRoute = false, CrowdLevel? crowd}) {
+  if (inRoute) return BarStatus.inRoute;
+  if (crowd == CrowdLevel.high) return BarStatus.crowded;
   return bar.isHiddenGem ? BarStatus.hiddenGem : BarStatus.regular;
 }
-
-BarStatus fundraiserStatusOf(Fundraiser fundraiser) =>
-    fundraiser.isSaved ? BarStatus.saved : BarStatus.rescuing;
 
 extension BarStatusX on BarStatus {
   String get label => switch (this) {
         BarStatus.regular => 'Popularny bar',
         BarStatus.hiddenGem => 'Ukryta perełka',
-        BarStatus.rescuing => 'Ratowany',
-        BarStatus.saved => 'Uratowany',
+        BarStatus.crowded => 'W tłoku',
+        BarStatus.inRoute => 'W trasie',
       };
 
   Color get color => switch (this) {
         BarStatus.regular => AppColors.regular,
         BarStatus.hiddenGem => AppColors.amber,
-        BarStatus.rescuing => AppColors.rescuing,
-        BarStatus.saved => AppColors.saved,
+        BarStatus.crowded => AppColors.coral,
+        BarStatus.inRoute => AppColors.green,
       };
 
   IconData get icon => switch (this) {
         BarStatus.regular => Icons.local_bar,
         BarStatus.hiddenGem => Icons.diamond_outlined,
-        BarStatus.rescuing => Icons.sos,
-        BarStatus.saved => Icons.verified,
+        BarStatus.crowded => Icons.groups,
+        BarStatus.inRoute => Icons.route,
       };
 }
 
@@ -64,7 +60,7 @@ class StatusChip extends StatelessWidget {
             style: TextStyle(
               color: color,
               fontSize: 12,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w700,
             ),
           ),
         ],

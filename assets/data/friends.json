@@ -1,7 +1,12 @@
 [
-  {"id": "f1", "name": "Ola", "emoji": "🦊", "points": 340, "favoriteDistrict": "Kazimierz"},
-  {"id": "f2", "name": "Kuba", "emoji": "🐻", "points": 220, "favoriteDistrict": "Podgórze"},
-  {"id": "f3", "name": "Zuza", "emoji": "🦉", "points": 510, "favoriteDistrict": "Stare Miasto"},
-  {"id": "f4", "name": "Marek", "emoji": "🐢", "points": 95, "favoriteDistrict": "Nowa Huta"},
-  {"id": "f5", "name": "Natalia", "emoji": "🐝", "points": 275, "favoriteDistrict": "Dębniki"}
+  {"id": "f1", "name": "Ola", "emoji": "🦊", "points": 340, "favoriteDistrict": "Kazimierz", "weeklyXp": 145, "league": "silver", "streakWeeks": 6, "isFriend": true},
+  {"id": "f2", "name": "Kuba", "emoji": "🐻", "points": 220, "favoriteDistrict": "Podgórze", "weeklyXp": 90, "league": "silver", "streakWeeks": 3, "isFriend": true},
+  {"id": "f3", "name": "Zuza", "emoji": "🦉", "points": 510, "favoriteDistrict": "Stare Miasto", "weeklyXp": 210, "league": "gold", "streakWeeks": 11, "isFriend": true},
+  {"id": "f4", "name": "Marek", "emoji": "🐢", "points": 95, "favoriteDistrict": "Nowa Huta", "weeklyXp": 35, "league": "silver", "streakWeeks": 1, "isFriend": true},
+  {"id": "f5", "name": "Natalia", "emoji": "🐝", "points": 275, "favoriteDistrict": "Dębniki", "weeklyXp": 120, "league": "silver", "streakWeeks": 4, "isFriend": true},
+  {"id": "s1", "name": "Bartek_KRK", "emoji": "🐺", "points": 300, "favoriteDistrict": "Zabłocie", "weeklyXp": 175, "league": "silver", "streakWeeks": 5, "isFriend": false},
+  {"id": "s2", "name": "Magda", "emoji": "🐙", "points": 180, "favoriteDistrict": "Krowodrza", "weeklyXp": 60, "league": "silver", "streakWeeks": 2, "isFriend": false},
+  {"id": "s3", "name": "Tomek_N", "emoji": "🦔", "points": 140, "favoriteDistrict": "Grzegórzki", "weeklyXp": 20, "league": "silver", "streakWeeks": 0, "isFriend": false},
+  {"id": "s4", "name": "Wiktoria", "emoji": "🦩", "points": 260, "favoriteDistrict": "Podgórze", "weeklyXp": 105, "league": "silver", "streakWeeks": 3, "isFriend": false},
+  {"id": "s5", "name": "Kamil", "emoji": "🐸", "points": 120, "favoriteDistrict": "Dębniki", "weeklyXp": 10, "league": "silver", "streakWeeks": 0, "isFriend": false}
 ]

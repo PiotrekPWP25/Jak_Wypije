@@ -3,68 +3,51 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'core/theme/app_theme.dart';
+import 'core/theme/theme_controller.dart';
 import 'features/bar_detail/bar_detail_screen.dart';
 import 'features/barobranie/barobranie_screen.dart';
-import 'features/barobranie/fundraiser_detail_screen.dart';
+import 'features/barobranie/safe_return_screen.dart';
+import 'features/bars/bars_screen.dart';
 import 'features/checkin/check_in_screen.dart';
 import 'features/friends/friends_screen.dart';
+import 'features/home/home_screen.dart';
 import 'features/map/map_screen.dart';
-import 'features/planner/planner_screen.dart';
 import 'features/profile/profile_screen.dart';
+import 'features/splash/splash_screen.dart';
 import 'widgets/home_shell.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'root');
 
+GoRoute _tab(String path, Widget screen) =>
+    GoRoute(path: path, builder: (context, state) => screen);
+
 final routerProvider = Provider<GoRouter>((ref) {
   final router = GoRouter(
     navigatorKey: _rootNavigatorKey,
-    initialLocation: '/map',
+    initialLocation: '/splash',
     routes: [
+      GoRoute(
+        path: '/splash',
+        builder: (context, state) => const SplashScreen(),
+      ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) =>
             HomeShell(navigationShell: navigationShell),
         branches: [
+          StatefulShellBranch(routes: [_tab('/start', const HomeScreen())]),
+          StatefulShellBranch(routes: [_tab('/map', const MapScreen())]),
+          StatefulShellBranch(routes: [_tab('/bars', const BarsScreen())]),
           StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: '/map',
-                builder: (context, state) => const MapScreen(),
-              ),
-            ],
+            routes: [_tab('/barobranie', const BarobranieScreen())],
           ),
           StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: '/planner',
-                builder: (context, state) => const PlannerScreen(),
-              ),
-            ],
-          ),
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: '/barobranie',
-                builder: (context, state) => const BarobranieScreen(),
-              ),
-            ],
-          ),
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: '/friends',
-                builder: (context, state) => const FriendsScreen(),
-              ),
-            ],
-          ),
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: '/profile',
-                builder: (context, state) => const ProfileScreen(),
-              ),
-            ],
+            routes: [_tab('/friends', const FriendsScreen())],
           ),
         ],
+      ),
+      GoRoute(
+        path: '/profile',
+        builder: (context, state) => const ProfileScreen(),
       ),
       GoRoute(
         path: '/bar/:id',
@@ -72,14 +55,13 @@ final routerProvider = Provider<GoRouter>((ref) {
             BarDetailScreen(barId: state.pathParameters['id']!),
       ),
       GoRoute(
-        path: '/fundraiser/:id',
-        builder: (context, state) =>
-            FundraiserDetailScreen(fundraiserId: state.pathParameters['id']!),
-      ),
-      GoRoute(
         path: '/checkin',
         builder: (context, state) =>
             CheckInScreen(preselectedBarId: state.uri.queryParameters['bar']),
+      ),
+      GoRoute(
+        path: '/safe-return',
+        builder: (context, state) => const SafeReturnScreen(),
       ),
     ],
   );
@@ -97,7 +79,7 @@ class JakWypijeApp extends ConsumerWidget {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
-      themeMode: ThemeMode.dark,
+      themeMode: ref.watch(themeModeProvider),
       routerConfig: ref.watch(routerProvider),
     );
   }

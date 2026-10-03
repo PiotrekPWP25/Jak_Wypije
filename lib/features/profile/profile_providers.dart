@@ -2,13 +2,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/local/local_storage.dart';
 import '../../data/models/bar.dart';
-import '../../data/models/fundraiser.dart';
 import '../../data/repositories/bar_repository.dart';
-import '../barobranie/barobranie_providers.dart';
+import '../barobranie/planner_controller.dart';
+import '../barobranie/safe_return.dart';
 import '../checkin/check_in_controller.dart';
 import '../friends/reviews_controller.dart';
-import '../planner/planner_controller.dart';
-import 'achievements.dart';
+import '../friends/trophies.dart';
 
 class UserNameNotifier extends Notifier<String> {
   @override
@@ -32,11 +31,11 @@ class ProfileStats {
     required this.uniqueBars,
     required this.districts,
     required this.hiddenGems,
+    required this.offPeakCheckIns,
+    required this.barrierFreeBars,
     required this.reviews,
     required this.planStops,
-    required this.supportedFundraisers,
-    required this.savedFundraisersSupported,
-    required this.totalContributed,
+    required this.safeReturns,
     required this.points,
   });
 
@@ -44,58 +43,46 @@ class ProfileStats {
   final int uniqueBars;
   final int districts;
   final int hiddenGems;
+  final int offPeakCheckIns;
+  final int barrierFreeBars;
   final int reviews;
   final int planStops;
-  final int supportedFundraisers;
-  final int savedFundraisersSupported;
-  final double totalContributed;
+  final int safeReturns;
   final int points;
 }
 
 final profileStatsProvider = Provider<ProfileStats>((ref) {
   final checkIns = ref.watch(checkInsProvider);
   final bars = ref.watch(barsProvider).valueOrNull ?? const <Bar>[];
-  final contributions = ref.watch(contributionsProvider);
-  final fundraisers =
-      ref.watch(fundraisersProvider).valueOrNull ?? const <Fundraiser>[];
   final myReviews = ref.watch(myReviewsProvider);
-  final plan = ref.watch(plannerProvider);
 
   final barsById = {for (final bar in bars) bar.id: bar};
   final visitedIds = checkIns.map((checkIn) => checkIn.barId).toSet();
   final visitedBars = visitedIds.map((id) => barsById[id]).nonNulls.toList();
-  final totalContributed =
-      contributions.values.fold<double>(0.0, (sum, value) => sum + value);
   final checkInPoints =
       checkIns.fold<int>(0, (sum, checkIn) => sum + checkIn.points);
-  final points = checkInPoints +
-      myReviews.length * MyReviewsNotifier.pointsPerReview +
-      (totalContributed / 2).floor();
 
   return ProfileStats(
     checkIns: checkIns.length,
     uniqueBars: visitedIds.length,
     districts: visitedBars.map((bar) => bar.district).toSet().length,
     hiddenGems: visitedBars.where((bar) => bar.isHiddenGem).length,
+    offPeakCheckIns: checkIns.where((checkIn) => checkIn.offPeak).length,
+    barrierFreeBars:
+        visitedBars.where((bar) => bar.accessibility.isBarrierFree).length,
     reviews: myReviews.length,
-    planStops: plan.barIds.length,
-    supportedFundraisers: contributions.values.where((v) => v > 0).length,
-    savedFundraisersSupported: fundraisers
-        .where((fundraiser) => fundraiser.isSaved && fundraiser.myContribution > 0)
-        .length,
-    totalContributed: totalContributed,
-    points: points,
+    planStops: ref.watch(plannerProvider).barIds.length,
+    safeReturns: ref.watch(safeReturnsProvider),
+    points:
+        checkInPoints + myReviews.length * MyReviewsNotifier.pointsPerReview,
   );
 });
 
-final achievementsProvider = Provider<List<AchievementProgress>>((ref) {
+final trophiesProvider = Provider<List<TrophyProgress>>((ref) {
   final stats = ref.watch(profileStatsProvider);
   return [
-    for (final achievement in allAchievements)
-      AchievementProgress(
-        achievement: achievement,
-        unlocked: isAchievementUnlocked(achievement.id, stats),
-      ),
+    for (final trophy in allTrophies)
+      TrophyProgress(definition: trophy, value: trophy.metric(stats)),
   ];
 });
 

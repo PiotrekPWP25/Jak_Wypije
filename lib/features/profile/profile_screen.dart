@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/theme_controller.dart';
 import '../../core/utils/formatters.dart';
 import '../../data/models/bar.dart';
 import '../../data/repositories/bar_repository.dart';
 import '../../widgets/empty_state.dart';
 import '../../widgets/section_header.dart';
 import '../checkin/check_in_controller.dart';
-import 'achievements.dart';
+import '../friends/trophies.dart';
 import 'profile_providers.dart';
 
 class ProfileScreen extends ConsumerWidget {
@@ -32,11 +34,13 @@ class ProfileScreen extends ConsumerWidget {
     final name = ref.watch(userNameProvider);
     final stats = ref.watch(profileStatsProvider);
     final level = levelFor(stats.points);
-    final achievements = ref.watch(achievementsProvider);
+    final trophies = ref.watch(trophiesProvider);
     final checkIns = ref.watch(checkInsProvider);
+    final themeMode = ref.watch(themeModeProvider);
     final bars = ref.watch(barsProvider).valueOrNull ?? const <Bar>[];
     final barsById = {for (final bar in bars) bar.id: bar};
-    final unlockedCount = achievements.where((a) => a.unlocked).length;
+    int countTier(TrophyTier tier) =>
+        trophies.where((trophy) => trophy.tier == tier).length;
 
     return Scaffold(
       appBar: AppBar(
@@ -53,18 +57,55 @@ class ProfileScreen extends ConsumerWidget {
         padding: const EdgeInsets.only(bottom: 24),
         children: [
           _ProfileHeader(name: name, level: level, points: stats.points),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: SegmentedButton<ThemeMode>(
+              segments: const [
+                ButtonSegment(
+                  value: ThemeMode.light,
+                  icon: Icon(Icons.light_mode_outlined),
+                  label: Text('Jasny'),
+                ),
+                ButtonSegment(
+                  value: ThemeMode.dark,
+                  icon: Icon(Icons.dark_mode_outlined),
+                  label: Text('Ciemny'),
+                ),
+              ],
+              selected: {themeMode},
+              onSelectionChanged: (selection) =>
+                  ref.read(themeModeProvider.notifier).set(selection.first),
+            ),
+          ),
+          const SizedBox(height: 16),
           _StatsGrid(stats: stats),
           SectionHeader(
-            title: 'Odznaki ($unlockedCount/${achievements.length})',
+            title: 'Pucharki',
+            trailing: TextButton(
+              onPressed: () => context.go('/friends'),
+              child: const Text('Gablota'),
+            ),
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Wrap(
-              spacing: 8,
-              runSpacing: 8,
+            child: Row(
               children: [
-                for (final progress in achievements)
-                  _AchievementChip(progress: progress),
+                for (final tier in [
+                  TrophyTier.gold,
+                  TrophyTier.silver,
+                  TrophyTier.bronze,
+                ])
+                  Expanded(
+                    child: Column(
+                      children: [
+                        Icon(Icons.emoji_events, size: 36, color: tier.color),
+                        Text(
+                          '${countTier(tier)} × ${tier.label}',
+                          style: const TextStyle(fontWeight: FontWeight.w800),
+                        ),
+                      ],
+                    ),
+                  ),
               ],
             ),
           ),
@@ -83,12 +124,15 @@ class ProfileScreen extends ConsumerWidget {
                   style: const TextStyle(fontSize: 24),
                 ),
                 title: Text(barsById[checkIn.barId]?.name ?? 'Nieznany bar'),
-                subtitle: Text(formatDate(checkIn.timestamp)),
+                subtitle: Text(
+                  '${formatDate(checkIn.timestamp)}'
+                  '${checkIn.offPeak ? ' · 🌿 poza tłokiem' : ''}',
+                ),
                 trailing: Text(
                   '+${checkIn.points} pkt',
                   style: const TextStyle(
                     color: AppColors.amber,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w900,
                   ),
                 ),
               ),
@@ -127,22 +171,20 @@ class _ProfileHeader extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  name,
-                  style: theme.textTheme.headlineSmall
-                      ?.copyWith(fontWeight: FontWeight.bold),
-                ),
+                Text(name, style: theme.textTheme.headlineSmall),
                 Text(
                   'Poziom ${level.number} · ${level.title}',
-                  style: theme.textTheme.bodyMedium
-                      ?.copyWith(color: AppColors.amber),
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: AppColors.amber,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 ClipRRect(
                   borderRadius: BorderRadius.circular(6),
                   child: LinearProgressIndicator(
                     value: level.progress(points),
-                    minHeight: 6,
+                    minHeight: 8,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -174,12 +216,8 @@ class _StatsGrid extends StatelessWidget {
       ('Bary', '${stats.uniqueBars}', Icons.sports_bar),
       ('Dzielnice', '${stats.districts}', Icons.location_city),
       ('Perełki', '${stats.hiddenGems}', Icons.diamond_outlined),
-      ('Oceny', '${stats.reviews}', Icons.rate_review_outlined),
-      (
-        'Wsparcie',
-        formatPln(stats.totalContributed, whole: true),
-        Icons.volunteer_activism,
-      ),
+      ('Poza tłokiem', '${stats.offPeakCheckIns}', Icons.eco_outlined),
+      ('Powroty', '${stats.safeReturns}', Icons.directions_bus),
     ];
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -194,7 +232,6 @@ class _StatsGrid extends StatelessWidget {
                 SizedBox(
                   width: width,
                   child: Card(
-                    margin: EdgeInsets.zero,
                     child: Padding(
                       padding: const EdgeInsets.symmetric(
                         vertical: 12,
@@ -206,12 +243,15 @@ class _StatsGrid extends StatelessWidget {
                           const SizedBox(height: 4),
                           Text(
                             value,
+                            style: theme.textTheme.titleMedium
+                                ?.copyWith(fontWeight: FontWeight.w900),
+                          ),
+                          Text(
+                            label,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: theme.textTheme.titleMedium
-                                ?.copyWith(fontWeight: FontWeight.bold),
+                            style: theme.textTheme.bodySmall,
                           ),
-                          Text(label, style: theme.textTheme.bodySmall),
                         ],
                       ),
                     ),
@@ -220,44 +260,6 @@ class _StatsGrid extends StatelessWidget {
             ],
           );
         },
-      ),
-    );
-  }
-}
-
-class _AchievementChip extends StatelessWidget {
-  const _AchievementChip({required this.progress});
-
-  final AchievementProgress progress;
-
-  @override
-  Widget build(BuildContext context) {
-    final achievement = progress.achievement;
-    final unlocked = progress.unlocked;
-    return Opacity(
-      opacity: unlocked ? 1.0 : 0.45,
-      child: ActionChip(
-        avatar: Text(achievement.emoji),
-        label: Text(achievement.title),
-        side: BorderSide(
-          color: unlocked ? AppColors.amber : Colors.grey,
-        ),
-        onPressed: () => showDialog<void>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: Text('${achievement.emoji} ${achievement.title}'),
-            content: Text(
-              '${achievement.description}\n\n'
-              '${unlocked ? 'Zdobyta! 🎉' : 'Jeszcze przed Tobą.'}',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('OK'),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }

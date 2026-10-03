@@ -1,9 +1,36 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:jak_wypije/core/utils/formatters.dart';
 import 'package:jak_wypije/core/utils/geo.dart';
+import 'package:jak_wypije/core/utils/time.dart';
 import 'package:latlong2/latlong.dart';
 
 void main() {
+  group('evening time axis', () {
+    test('night hours continue past 24:00', () {
+      expect(parseEveningTime('19:30'), 19 * 60 + 30);
+      expect(parseEveningTime('01:30'), 25 * 60 + 30);
+      expect(eveningMinutes(DateTime(2026, 10, 4, 2, 15)), 26 * 60 + 15);
+      expect(eveningMinutes(DateTime(2026, 10, 3, 22)), 22 * 60);
+    });
+
+    test('daytime city data shows the 21:00 forecast', () {
+      final day = CityClock.of(DateTime(2026, 10, 3, 14));
+      expect(day.isForecast, isTrue);
+      expect(day.minutes, 21 * 60);
+      final night = CityClock.of(DateTime(2026, 10, 4, 1));
+      expect(night.isForecast, isFalse);
+      expect(night.minutes, 25 * 60);
+    });
+
+    test('weeks start on Monday at midnight, also across DST', () {
+      expect(weekStart(DateTime(2026, 10, 3, 21)), DateTime(2026, 9, 28));
+      expect(weekStart(DateTime(2026, 9, 28)), DateTime(2026, 9, 28));
+      // DST ends on 25 October 2026 in Poland.
+      expect(weekStart(DateTime(2026, 10, 27, 12)), DateTime(2026, 10, 26));
+      expect(weekStart(DateTime(2026, 10, 25, 23)), DateTime(2026, 10, 19));
+    });
+  });
+
   group('haversineMeters', () {
     test('is 0 for the same point', () {
       expect(haversineMeters(krakowCenter, krakowCenter), 0);

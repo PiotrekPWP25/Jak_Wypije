@@ -1,0 +1,82 @@
+[
+  {
+    "id": "rynek",
+    "name": "Stare Miasto",
+    "lat": 50.0617,
+    "lng": 19.9373,
+    "radiusMeters": 650,
+    "crowdByHour": [55, 70, 85, 95, 95, 90, 80, 65, 45],
+    "quietZone": true,
+    "note": "Gęsta zabudowa mieszkalna i zabytkowa. Po 22:00 obowiązuje cisza nocna – rozmawiaj ciszej na ulicy. Sklepy: nocny zakaz sprzedaży alkoholu (sprawdź aktualną uchwałę Rady Miasta)."
+  },
+  {
+    "id": "kazimierz",
+    "name": "Kazimierz",
+    "lat": 50.0515,
+    "lng": 19.9455,
+    "radiusMeters": 500,
+    "crowdByHour": [50, 65, 80, 92, 98, 95, 85, 70, 50],
+    "quietZone": true,
+    "note": "Najbardziej obciążona strefa nocna w mieście. Mieszkańcy skarżą się na hałas – po 22:00 wybieraj lokale z salą w środku."
+  },
+  {
+    "id": "podgorze",
+    "name": "Podgórze",
+    "lat": 50.0450,
+    "lng": 19.9530,
+    "radiusMeters": 500,
+    "crowdByHour": [20, 30, 40, 50, 55, 50, 40, 30, 20],
+    "quietZone": false,
+    "note": "Kameralnie, kilka minut pieszo od Kazimierza przez kładkę."
+  },
+  {
+    "id": "zablocie",
+    "name": "Zabłocie",
+    "lat": 50.0485,
+    "lng": 19.9610,
+    "radiusMeters": 450,
+    "crowdByHour": [15, 25, 35, 45, 50, 45, 35, 25, 15],
+    "quietZone": false,
+    "note": "Postindustrialna dzielnica z dużymi lokalami – miejsce dla większych grup."
+  },
+  {
+    "id": "debniki",
+    "name": "Dębniki",
+    "lat": 50.0505,
+    "lng": 19.9300,
+    "radiusMeters": 600,
+    "crowdByHour": [15, 20, 30, 35, 35, 30, 25, 15, 10],
+    "quietZone": false,
+    "note": "Bulwary nad Wisłą i spokojne lokale po drugiej stronie rzeki."
+  },
+  {
+    "id": "grzegorzki",
+    "name": "Grzegórzki",
+    "lat": 50.0590,
+    "lng": 19.9560,
+    "radiusMeters": 450,
+    "crowdByHour": [15, 25, 35, 40, 40, 35, 25, 20, 10],
+    "quietZone": false,
+    "note": "Dobrze skomunikowane – tramwaje nocne przy rondzie."
+  },
+  {
+    "id": "krowodrza",
+    "name": "Krowodrza",
+    "lat": 50.0712,
+    "lng": 19.9241,
+    "radiusMeters": 600,
+    "crowdByHour": [20, 30, 40, 45, 40, 35, 25, 15, 10],
+    "quietZone": true,
+    "note": "Osiedla studenckie i mieszkalne – po 22:00 cisza nocna."
+  },
+  {
+    "id": "nowa_huta",
+    "name": "Nowa Huta",
+    "lat": 50.0717,
+    "lng": 20.0375,
+    "radiusMeters": 900,
+    "crowdByHour": [10, 15, 20, 25, 25, 20, 15, 10, 5],
+    "quietZone": false,
+    "note": "Szerokie aleje i zero tłoku. Dojazd tramwajem z centrum ok. 25 min."
+  }
+]

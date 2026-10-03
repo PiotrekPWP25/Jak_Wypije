@@ -38,6 +38,16 @@ class PlannerNotifier extends Notifier<EveningPlan> {
     }
   }
 
+  /// Swaps [oldId] for [newId] in place (e.g. a calmer alternative).
+  void replace(String oldId, String newId) {
+    if (state.barIds.contains(newId)) return;
+    _update(
+      state.copyWith(
+        barIds: [for (final id in state.barIds) id == oldId ? newId : id],
+      ),
+    );
+  }
+
   /// [newIndex] is the final position after removing the item at [oldIndex].
   void moveStop(int oldIndex, int newIndex) {
     final ids = [...state.barIds];

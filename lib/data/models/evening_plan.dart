@@ -42,8 +42,7 @@ class EveningPlan {
     int? drinksPerStop,
   }) {
     return EveningPlan(
-      barIds:
-          barIds == null ? this.barIds : List<String>.unmodifiable(barIds),
+      barIds: barIds == null ? this.barIds : List<String>.unmodifiable(barIds),
       startMinutes: startMinutes ?? this.startMinutes,
       minutesPerStop: minutesPerStop ?? this.minutesPerStop,
       drinksPerStop: drinksPerStop ?? this.drinksPerStop,

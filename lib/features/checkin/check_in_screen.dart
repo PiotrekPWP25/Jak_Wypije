@@ -11,7 +11,7 @@ import '../../data/location/location_provider.dart';
 import '../../data/models/bar.dart';
 import '../../data/models/check_in.dart';
 import '../../data/repositories/bar_repository.dart';
-import '../barobranie/barobranie_providers.dart';
+import '../../data/repositories/city_repository.dart';
 import 'check_in_controller.dart';
 
 class CheckInScreen extends ConsumerStatefulWidget {
@@ -61,10 +61,10 @@ class _CheckInScreenState extends ConsumerState<CheckInScreen> {
         _showSnack('Nie rozpoznano baru z tego kodu.');
         return;
       }
-      final fundraiser = ref.read(fundraiserByBarIdProvider)[bar.id];
+      final zone = ref.read(zonesByIdProvider)[bar.zoneId];
       final result = ref
           .read(checkInsProvider.notifier)
-          .checkIn(bar, method: method, fundraiser: fundraiser);
+          .checkIn(bar, method: method, zone: zone);
       await showDialog<void>(
         context: context,
         builder: (_) => _CheckInResultDialog(bar: bar, result: result),
@@ -164,7 +164,7 @@ class _CheckInScreenState extends ConsumerState<CheckInScreen> {
                 const SizedBox(height: 4),
                 Text(
                   'Każdy bar partnerski ma naklejkę z kodem JakWypiję. '
-                  'Za ukryte perełki i ratowane bary dostajesz bonusy!',
+                  'Za ukryte perełki i bary poza tłokiem dostajesz bonusy!',
                   style: theme.textTheme.bodySmall
                       ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                   textAlign: TextAlign.center,

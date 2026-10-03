@@ -1,9 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/utils/time.dart';
 import '../../data/local/local_storage.dart';
 import '../../data/models/bar.dart';
 import '../../data/models/check_in.dart';
-import '../../data/models/fundraiser.dart';
+import '../../data/models/city_zone.dart';
 
 class CheckInResult {
   const CheckInResult({
@@ -23,7 +24,9 @@ class CheckInsNotifier extends Notifier<List<CheckIn>> {
   static const int basePoints = 10;
   static const int firstVisitBonus = 5;
   static const int hiddenGemBonus = 15;
-  static const int rescueBonus = 10;
+
+  /// Smart City: rewards spreading nightlife away from crowded zones.
+  static const int offPeakBonus = 10;
 
   @override
   List<CheckIn> build() => ref.watch(localStorageProvider).loadCheckIns();
@@ -32,7 +35,7 @@ class CheckInsNotifier extends Notifier<List<CheckIn>> {
   CheckInResult checkIn(
     Bar bar, {
     required CheckInMethod method,
-    Fundraiser? fundraiser,
+    CityZone? zone,
     DateTime? now,
   }) {
     final at = now ?? DateTime.now();
@@ -57,9 +60,11 @@ class CheckInsNotifier extends Notifier<List<CheckIn>> {
       points += hiddenGemBonus;
       bonuses.add('Ukryta perełka +$hiddenGemBonus');
     }
-    if (fundraiser != null && !fundraiser.isSaved) {
-      points += rescueBonus;
-      bonuses.add('Wspierasz ratowany bar +$rescueBonus');
+    final offPeak =
+        zone != null && zone.levelAt(eveningMinutes(at)) == CrowdLevel.low;
+    if (offPeak) {
+      points += offPeakBonus;
+      bonuses.add('Poza tłokiem +$offPeakBonus');
     }
 
     final checkIn = CheckIn(
@@ -67,6 +72,7 @@ class CheckInsNotifier extends Notifier<List<CheckIn>> {
       timestamp: at,
       points: points,
       method: method,
+      offPeak: offPeak,
     );
     state = List<CheckIn>.unmodifiable([checkIn, ...state]);
     ref.read(localStorageProvider).saveCheckIns(state);

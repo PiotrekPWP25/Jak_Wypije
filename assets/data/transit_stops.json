@@ -1,0 +1,114 @@
+[
+  {
+    "id": "t01",
+    "name": "Plac Wolnica",
+    "lat": 50.0497,
+    "lng": 19.9440,
+    "lines": [
+      {"number": "8", "headsign": "Bronowice Małe", "night": false, "from": "12:00", "to": "23:24", "every": 12},
+      {"number": "62", "headsign": "Os. Piastów", "night": true, "from": "23:42", "to": "04:42", "every": 30}
+    ]
+  },
+  {
+    "id": "t02",
+    "name": "Miodowa",
+    "lat": 50.0525,
+    "lng": 19.9465,
+    "lines": [
+      {"number": "3", "headsign": "Nowy Bieżanów", "night": false, "from": "12:00", "to": "23:15", "every": 10},
+      {"number": "64", "headsign": "Bronowice Małe", "night": true, "from": "23:50", "to": "04:50", "every": 30}
+    ]
+  },
+  {
+    "id": "t03",
+    "name": "Poczta Główna",
+    "lat": 50.0590,
+    "lng": 19.9435,
+    "lines": [
+      {"number": "13", "headsign": "Nowy Bieżanów", "night": false, "from": "12:00", "to": "23:30", "every": 10},
+      {"number": "62", "headsign": "Os. Piastów", "night": true, "from": "23:35", "to": "04:35", "every": 30},
+      {"number": "64", "headsign": "Bronowice Małe", "night": true, "from": "23:55", "to": "04:55", "every": 30}
+    ]
+  },
+  {
+    "id": "t04",
+    "name": "Teatr Bagatela",
+    "lat": 50.0632,
+    "lng": 19.9325,
+    "lines": [
+      {"number": "2", "headsign": "Cmentarz Rakowicki", "night": false, "from": "12:00", "to": "23:10", "every": 10},
+      {"number": "69", "headsign": "Kopiec Wandy", "night": true, "from": "23:40", "to": "04:40", "every": 30}
+    ]
+  },
+  {
+    "id": "t05",
+    "name": "Dworzec Główny",
+    "lat": 50.0670,
+    "lng": 19.9460,
+    "lines": [
+      {"number": "50", "headsign": "Kurdwanów", "night": false, "from": "12:00", "to": "23:40", "every": 8},
+      {"number": "601", "headsign": "Mistrzejowice", "night": true, "from": "23:20", "to": "05:20", "every": 20},
+      {"number": "664", "headsign": "Nowa Huta", "night": true, "from": "23:30", "to": "05:00", "every": 30}
+    ]
+  },
+  {
+    "id": "t06",
+    "name": "Rondo Grunwaldzkie",
+    "lat": 50.0480,
+    "lng": 19.9330,
+    "lines": [
+      {"number": "18", "headsign": "Czerwone Maki", "night": false, "from": "12:00", "to": "23:20", "every": 10},
+      {"number": "69", "headsign": "Czerwone Maki", "night": true, "from": "23:45", "to": "04:45", "every": 30}
+    ]
+  },
+  {
+    "id": "t07",
+    "name": "Plac Bohaterów Getta",
+    "lat": 50.0466,
+    "lng": 19.9545,
+    "lines": [
+      {"number": "11", "headsign": "Mały Płaszów", "night": false, "from": "12:00", "to": "23:18", "every": 12},
+      {"number": "62", "headsign": "Os. Piastów", "night": true, "from": "23:47", "to": "04:47", "every": 30}
+    ]
+  },
+  {
+    "id": "t08",
+    "name": "Zabłocie",
+    "lat": 50.0475,
+    "lng": 19.9630,
+    "lines": [
+      {"number": "20", "headsign": "Mały Płaszów", "night": false, "from": "12:00", "to": "23:05", "every": 15},
+      {"number": "608", "headsign": "Bieżanów Nowy", "night": true, "from": "23:30", "to": "04:30", "every": 60}
+    ]
+  },
+  {
+    "id": "t09",
+    "name": "Rondo Grzegórzeckie",
+    "lat": 50.0585,
+    "lng": 19.9585,
+    "lines": [
+      {"number": "1", "headsign": "Wzgórza Krzesławickie", "night": false, "from": "12:00", "to": "23:35", "every": 10},
+      {"number": "64", "headsign": "Os. Piastów", "night": true, "from": "23:52", "to": "04:52", "every": 30}
+    ]
+  },
+  {
+    "id": "t10",
+    "name": "Plac Inwalidów",
+    "lat": 50.0705,
+    "lng": 19.9265,
+    "lines": [
+      {"number": "4", "headsign": "Bronowice Małe", "night": false, "from": "12:00", "to": "23:20", "every": 10},
+      {"number": "64", "headsign": "Bronowice Małe", "night": true, "from": "00:05", "to": "05:05", "every": 30}
+    ]
+  },
+  {
+    "id": "t11",
+    "name": "Plac Centralny",
+    "lat": 50.0720,
+    "lng": 20.0380,
+    "lines": [
+      {"number": "22", "headsign": "Walcownia", "night": false, "from": "12:00", "to": "23:00", "every": 12},
+      {"number": "664", "headsign": "Dworzec Główny", "night": true, "from": "23:25", "to": "04:55", "every": 30}
+    ]
+  }
+]

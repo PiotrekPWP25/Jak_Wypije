@@ -78,6 +78,31 @@ class BarMarker extends StatelessWidget {
   }
 }
 
+/// Public transport stop with night service.
+class TransitStopMarker extends StatelessWidget {
+  const TransitStopMarker({super.key, this.onTap});
+
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: AppColors.night,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: Colors.white, width: 2),
+          boxShadow: const [BoxShadow(color: Colors.black38, blurRadius: 4)],
+        ),
+        child: const Center(
+          child: Icon(Icons.directions_bus, color: Colors.white, size: 20),
+        ),
+      ),
+    );
+  }
+}
+
 class UserLocationDot extends StatelessWidget {
   const UserLocationDot({super.key});
 
