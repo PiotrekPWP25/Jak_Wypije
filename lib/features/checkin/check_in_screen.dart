@@ -8,17 +8,20 @@ import '../../core/theme/app_colors.dart';
 import '../../core/utils/formatters.dart';
 import '../../core/utils/geo.dart';
 import '../../data/location/location_provider.dart';
-import '../../data/models/bar.dart';
 import '../../data/models/check_in.dart';
+import '../../data/models/landmark.dart';
+import '../../data/models/place.dart';
 import '../../data/repositories/bar_repository.dart';
 import '../../data/repositories/city_repository.dart';
+import '../../data/repositories/place_repository.dart';
+import '../barobranie/planner_controller.dart';
 import 'check_in_controller.dart';
 
 class CheckInScreen extends ConsumerStatefulWidget {
-  const CheckInScreen({super.key, this.preselectedBarId});
+  const CheckInScreen({super.key, this.preselectedPlaceId});
 
-  /// When opened from a bar's page, GPS/demo check-in targets this bar.
-  final String? preselectedBarId;
+  /// When opened from a place's page, GPS/demo check-in targets this place.
+  final String? preselectedPlaceId;
 
   @override
   ConsumerState<CheckInScreen> createState() => _CheckInScreenState();
@@ -50,24 +53,29 @@ class _CheckInScreenState extends ConsumerState<CheckInScreen> {
     await _checkIn(barId, CheckInMethod.qr);
   }
 
-  Future<void> _checkIn(String barId, CheckInMethod method) async {
+  Future<void> _checkIn(String placeId, CheckInMethod method) async {
     if (_busy) return;
     setState(() => _busy = true);
     try {
-      final bars = await ref.read(barsProvider.future);
+      await ref.read(barsProvider.future);
+      await ref.read(landmarksProvider.future);
       if (!mounted) return;
-      final bar = bars.where((b) => b.id == barId).firstOrNull;
-      if (bar == null) {
-        _showSnack('Nie rozpoznano baru z tego kodu.');
+      final placesById = ref.read(placesByIdProvider);
+      final place = placesById[placeId];
+      if (place == null) {
+        _showSnack('Nie rozpoznano miejsca z tego kodu.');
         return;
       }
-      final zone = ref.read(zonesByIdProvider)[bar.zoneId];
-      final result = ref
-          .read(checkInsProvider.notifier)
-          .checkIn(bar, method: method, zone: zone);
+      final result = ref.read(checkInsProvider.notifier).checkIn(
+            place,
+            method: method,
+            placesById: placesById,
+            zone: ref.read(zonesByIdProvider)[place.zoneId],
+            plan: ref.read(plannerProvider),
+          );
       await showDialog<void>(
         context: context,
-        builder: (_) => _CheckInResultDialog(bar: bar, result: result),
+        builder: (_) => _CheckInResultDialog(place: place, result: result),
       );
       if (!mounted) return;
       if (result.success && context.canPop()) context.pop();
@@ -76,7 +84,7 @@ class _CheckInScreenState extends ConsumerState<CheckInScreen> {
     }
   }
 
-  Future<void> _checkInByGps(List<Bar> bars) async {
+  Future<void> _checkInByGps(List<Place> places) async {
     ref.invalidate(userPositionProvider);
     final position = await ref.read(userPositionProvider.future);
     if (!mounted) return;
@@ -84,22 +92,22 @@ class _CheckInScreenState extends ConsumerState<CheckInScreen> {
       _showSnack('Brak dostępu do lokalizacji. Włącz GPS i nadaj uprawnienia.');
       return;
     }
-    final preselectedId = widget.preselectedBarId;
+    final preselectedId = widget.preselectedPlaceId;
     final candidates = preselectedId == null
-        ? bars
-        : bars.where((bar) => bar.id == preselectedId);
+        ? places
+        : places.where((place) => place.id == preselectedId);
 
-    Bar? nearest;
+    Place? nearest;
     var bestDistance = double.infinity;
-    for (final bar in candidates) {
-      final distance = haversineMeters(position, bar.location);
+    for (final place in candidates) {
+      final distance = haversineMeters(position, place.location);
       if (distance < bestDistance) {
         bestDistance = distance;
-        nearest = bar;
+        nearest = place;
       }
     }
     if (nearest == null) {
-      _showSnack('Nie znaleziono baru w pobliżu.');
+      _showSnack('Nie znaleziono miejsca w pobliżu.');
       return;
     }
     if (bestDistance > _gpsRadiusMeters) {
@@ -115,10 +123,21 @@ class _CheckInScreenState extends ConsumerState<CheckInScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final bars = ref.watch(barsProvider).valueOrNull ?? const <Bar>[];
-    final preselected =
-        bars.where((bar) => bar.id == widget.preselectedBarId).firstOrNull;
-    final demoBars = preselected == null ? bars : [preselected];
+    final places = ref.watch(placesProvider).valueOrNull ?? const <Place>[];
+    final plan = ref.watch(plannerProvider);
+    final preselected = places
+        .where((place) => place.id == widget.preselectedPlaceId)
+        .firstOrNull;
+    // Demo list: the preselected place, else route stops first, then the rest.
+    int order(Place place) {
+      final index = plan.stopIds.indexOf(place.id);
+      return index < 0 ? 999 : index;
+    }
+
+    final demoPlaces = preselected != null
+        ? [preselected]
+        : ([...places]..sort((a, b) => order(a).compareTo(order(b))));
+    final isLandmark = preselected is Landmark;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Zamelduj się')),
@@ -130,7 +149,7 @@ class _CheckInScreenState extends ConsumerState<CheckInScreen> {
               padding: const EdgeInsets.all(16),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(24),
-                child: _scannerSupported
+                child: _scannerSupported && !isLandmark
                     ? Stack(
                         fit: StackFit.expand,
                         children: [
@@ -156,40 +175,45 @@ class _CheckInScreenState extends ConsumerState<CheckInScreen> {
               children: [
                 Text(
                   preselected == null
-                      ? 'Zeskanuj kod QR przy barze'
-                      : 'Zeskanuj kod QR w: ${preselected.name}',
+                      ? 'Zeskanuj kod QR w barze albo melduj się przez GPS'
+                      : 'Meldunek: ${preselected.name}',
                   style: theme.textTheme.titleMedium,
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Każdy bar partnerski ma naklejkę z kodem JakWypiję. '
-                  'Za ukryte perełki i bary poza tłokiem dostajesz bonusy!',
+                  'Punkty zdobywasz za odkrywanie: atrakcje, nowe dzielnice, '
+                  'spacer i ukończone trasy. W barach punktujemy maks. '
+                  '2 meldunki na wieczór.',
                   style: theme.textTheme.bodySmall
                       ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 12),
                 OutlinedButton.icon(
-                  onPressed: _busy ? null : () => _checkInByGps(bars),
+                  onPressed: _busy ? null : () => _checkInByGps(places),
                   icon: const Icon(Icons.my_location),
-                  label: const Text('Nie mam kodu – melduję się przez GPS'),
+                  label: const Text('Melduję się przez GPS'),
                 ),
                 ExpansionTile(
                   title: const Text('Tryb demo (hackathon)'),
-                  subtitle: const Text('Symuluj zeskanowanie kodu'),
+                  subtitle: const Text('Symuluj meldunek bez QR i GPS'),
                   children: [
-                    for (final bar in demoBars)
+                    for (final place in demoPlaces)
                       ListTile(
                         leading: Text(
-                          bar.emoji,
+                          place.emoji,
                           style: const TextStyle(fontSize: 22),
                         ),
-                        title: Text(bar.name),
-                        subtitle: Text(bar.qrPayload),
+                        title: Text(place.name),
+                        subtitle: Text(
+                          '${place is Landmark ? 'Atrakcja' : 'Bar'} · '
+                          '${place.district}'
+                          '${plan.stopIds.contains(place.id) ? ' · w trasie' : ''}',
+                        ),
                         onTap: _busy
                             ? null
-                            : () => _checkIn(bar.id, CheckInMethod.demo),
+                            : () => _checkIn(place.id, CheckInMethod.demo),
                       ),
                   ],
                 ),
@@ -231,7 +255,7 @@ class _ScannerUnavailable extends StatelessWidget {
         child: Padding(
           padding: EdgeInsets.all(24),
           child: Text(
-            'Skaner QR działa na Androidzie, iOS, macOS i w przeglądarce. '
+            'Atrakcje zaliczasz przez GPS (do 150 m), a skaner QR działa w barach. '
             'Użyj GPS albo trybu demo poniżej.',
             textAlign: TextAlign.center,
           ),
@@ -242,16 +266,17 @@ class _ScannerUnavailable extends StatelessWidget {
 }
 
 class _CheckInResultDialog extends StatelessWidget {
-  const _CheckInResultDialog({required this.bar, required this.result});
+  const _CheckInResultDialog({required this.place, required this.result});
 
-  final Bar bar;
+  final Place place;
   final CheckInResult result;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return AlertDialog(
-      title: Text(result.success ? '${bar.emoji} Zameldowano!' : 'Hola, hola…'),
+      title:
+          Text(result.success ? '${place.emoji} Zameldowano!' : 'Hola, hola…'),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,

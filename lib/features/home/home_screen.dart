@@ -5,24 +5,59 @@ import 'package:go_router/go_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/theme_controller.dart';
 import '../../core/utils/formatters.dart';
-import '../../data/models/bar.dart';
+import '../../data/models/city_district.dart';
 import '../../data/models/city_zone.dart';
-import '../../data/repositories/bar_repository.dart';
+import '../../data/models/landmark.dart';
+import '../../data/models/place.dart';
+import '../../data/models/trip.dart';
 import '../../data/repositories/city_repository.dart';
+import '../../data/repositories/place_repository.dart';
 import '../../widgets/bar_info.dart';
 import '../../widgets/section_header.dart';
 import '../barobranie/plan_calculator.dart';
 import '../barobranie/planner_controller.dart';
+import '../bars/bar_filters.dart';
 import '../bars/bars_providers.dart';
+import '../events/events_widgets.dart';
 import '../friends/leagues.dart';
+import '../gamification/challenges_card.dart';
+import '../gamification/gamification_providers.dart';
+import '../onboarding/user_mode.dart';
 import '../profile/profile_providers.dart';
+import '../trips/trips_widgets.dart';
 
+/// Start screen – sections depend on the tourist / local mode.
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final bars = ref.watch(barsProvider).valueOrNull ?? const <Bar>[];
+    final mode = ref.watch(userModeProvider) ?? UserMode.tourist;
+    final sections = mode == UserMode.tourist
+        ? const <Widget>[
+            SectionHeader(title: 'Gotowe trasy'),
+            TripsCarousel(preferred: TripAudience.tourist),
+            SectionHeader(title: 'Must-see w pobliżu'),
+            _MustSeeCarousel(),
+            _CityNowCard(),
+            _PassportCard(),
+            SectionHeader(title: 'Ukryte perełki'),
+            _GemsCarousel(),
+          ]
+        : const <Widget>[
+            SectionHeader(title: 'Wyzwania tygodnia'),
+            WeeklyChallengesCard(),
+            SectionHeader(title: 'W tym tygodniu'),
+            UpcomingEventsCard(),
+            _HappyHoursSection(),
+            _NewPlacesSection(),
+            _UnvisitedDistrictsCard(),
+            _CityNowCard(),
+            SectionHeader(title: 'Trasy dla mieszkańców'),
+            TripsCarousel(preferred: TripAudience.local),
+            _LeagueCard(),
+          ];
+
     return Scaffold(
       body: SafeArea(
         bottom: false,
@@ -30,12 +65,9 @@ class HomeScreen extends ConsumerWidget {
           padding: const EdgeInsets.only(bottom: 24),
           children: [
             const _Header(),
-            _EveningCard(bars: bars),
+            const _EveningCard(),
             const _QuickActions(),
-            const _CityNowCard(),
-            const SectionHeader(title: 'Ukryte perełki dla Ciebie'),
-            _GemsCarousel(bars: bars),
-            const _LeagueCard(),
+            ...sections,
           ],
         ),
       ),
@@ -57,6 +89,7 @@ class _Header extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final name = ref.watch(userNameProvider);
+    final mode = ref.watch(userModeProvider) ?? UserMode.tourist;
     final isDark = ref.watch(themeModeProvider) == ThemeMode.dark;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 8, 8),
@@ -73,7 +106,9 @@ class _Header extends ConsumerWidget {
                   style: theme.textTheme.titleLarge,
                 ),
                 Text(
-                  'Gdzie dziś wypijesz?',
+                  mode == UserMode.tourist
+                      ? 'Co dziś zobaczysz w Krakowie?'
+                      : 'Co nowego w Twoim mieście?',
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
@@ -101,16 +136,14 @@ class _Header extends ConsumerWidget {
 }
 
 class _EveningCard extends ConsumerWidget {
-  const _EveningCard({required this.bars});
-
-  final List<Bar> bars;
+  const _EveningCard();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final plan = ref.watch(plannerProvider);
     final zones = ref.watch(zonesByIdProvider);
-    final stops = resolveStops(plan, bars);
+    final stops = resolveStops(plan, ref.watch(placesByIdProvider));
     final summary = calculatePlan(plan, stops, zones: zones);
 
     return Padding(
@@ -132,28 +165,28 @@ class _EveningCard extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Twój wieczór',
+                'Twoja trasa',
                 style: theme.textTheme.titleLarge
                     ?.copyWith(color: AppColors.brown),
               ),
               const SizedBox(height: 6),
               if (stops.isEmpty)
                 const Text(
-                  'Nie masz jeszcze trasy. Wybierz bary, a my ułożymy '
-                  'Barobranie, policzymy spacer, budżet i powrót do domu.',
+                  'Połącz atrakcje i bary w jedną trasę albo wybierz gotową. '
+                  'Policzymy spacer, budżet i powrót do domu.',
                 )
               else ...[
                 Text(
                   '${stops.length} '
-                  '${pluralize(stops.length, 'bar', 'bary', 'barów')} · '
-                  '${formatClock(plan.startMinutes)}–'
+                  '${pluralize(stops.length, 'przystanek', 'przystanki', 'przystanków')}'
+                  ' · ${formatClock(plan.startMinutes)}–'
                   '${formatClock(summary.endMinutes)} · '
-                  '${summary.totalCost.label}',
+                  '${formatDistance(summary.totalWalkMeters)} pieszo',
                   style: const TextStyle(fontWeight: FontWeight.w800),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  stops.map((bar) => bar.emoji).join('  →  '),
+                  stops.map((place) => place.emoji).join('  →  '),
                   style: const TextStyle(fontSize: 22),
                 ),
                 if (summary.warningCount > 0) ...[
@@ -174,12 +207,10 @@ class _EveningCard extends ConsumerWidget {
                       backgroundColor: AppColors.brown,
                       foregroundColor: AppColors.amber,
                     ),
-                    onPressed: () => context.go(
-                      stops.isEmpty ? '/bars' : '/barobranie',
-                    ),
+                    onPressed: () => context.go('/barobranie'),
                     icon: Icon(stops.isEmpty ? Icons.add : Icons.route),
                     label: Text(
-                      stops.isEmpty ? 'Zaplanuj Barobranie' : 'Otwórz trasę',
+                      stops.isEmpty ? 'Zaplanuj trasę' : 'Otwórz trasę',
                     ),
                   ),
                   if (stops.isNotEmpty) ...[
@@ -224,24 +255,19 @@ class _QuickActions extends ConsumerWidget {
             const SizedBox(width: 10),
             Expanded(
               child: _ActionTile(
-                icon: Icons.directions_bus,
-                label: 'Bezpieczny powrót',
-                color: AppColors.night,
-                onTap: () => context.push('/safe-return'),
+                icon: Icons.menu_book_outlined,
+                label: 'Paszport',
+                color: AppColors.green,
+                onTap: () => context.push('/passport'),
               ),
             ),
             const SizedBox(width: 10),
             Expanded(
               child: _ActionTile(
-                icon: Icons.near_me,
-                label: 'Bary w pobliżu',
-                color: AppColors.green,
-                onTap: () {
-                  ref
-                      .read(distanceReferenceProvider.notifier)
-                      .set(DistanceReference.me);
-                  context.go('/bars');
-                },
+                icon: Icons.directions_bus,
+                label: 'Bezpieczny powrót',
+                color: AppColors.night,
+                onTap: () => context.push('/safe-return'),
               ),
             ),
           ],
@@ -297,6 +323,241 @@ class _ActionTile extends StatelessWidget {
   }
 }
 
+/// Nearest landmarks from the user (or the route's last stop).
+class _MustSeeCarousel extends ConsumerWidget {
+  const _MustSeeCarousel();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final listings = ref.watch(landmarkListingsProvider).valueOrNull ??
+        const <LandmarkListing>[];
+    if (listings.isEmpty) return const SizedBox(height: 8);
+    return _HorizontalCards(
+      children: [
+        for (final listing in listings.take(8))
+          _MiniCard(
+            emoji: listing.landmark.emoji,
+            title: listing.landmark.name,
+            subtitle: '${listing.landmark.category.label} · '
+                '${formatDistance(listing.distanceMeters)}',
+            footer: listing.landmark.ticketLabel,
+            onTap: () => context.push('/landmark/${listing.landmark.id}'),
+          ),
+      ],
+    );
+  }
+}
+
+class _GemsCarousel extends ConsumerWidget {
+  const _GemsCarousel();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final listings = ref.watch(barListingsProvider).valueOrNull ?? const [];
+    final gems = listings.where((l) => l.bar.isHiddenGem).toList()
+      ..sort((a, b) => (b.friendsRating ?? 0).compareTo(a.friendsRating ?? 0));
+    if (gems.isEmpty) return const SizedBox(height: 8);
+    return _HorizontalCards(
+      children: [
+        for (final listing in gems)
+          _MiniCard(
+            emoji: listing.bar.emoji,
+            title: listing.bar.name,
+            subtitle: listing.bar.district,
+            footer: listing.friendsRating == null
+                ? 'Ogólnie ${formatRating(listing.bar.publicRating)}'
+                : 'Znajomi ${formatRating(listing.friendsRating!)}',
+            onTap: () => context.push('/bar/${listing.bar.id}'),
+          ),
+      ],
+    );
+  }
+}
+
+/// "Teraz taniej": venues with a happy hour today, running ones first.
+class _HappyHoursSection extends ConsumerWidget {
+  const _HappyHoursSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final listings = (ref.watch(barListingsProvider).valueOrNull ??
+            const <BarListing>[])
+        .where((l) => l.bar.happyHour != null)
+        .toList()
+      ..sort(
+          (a, b) => (b.isHappyHour ? 1 : 0).compareTo(a.isHappyHour ? 1 : 0));
+    if (listings.isEmpty) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const SectionHeader(title: 'Teraz taniej'),
+        _HorizontalCards(
+          children: [
+            for (final listing in listings)
+              _MiniCard(
+                emoji: listing.bar.emoji,
+                title: listing.bar.name,
+                subtitle: listing.bar.happyHour!.label,
+                footer: listing.isHappyHour
+                    ? '🔥 trwa teraz'
+                    : '🕒 ${listing.bar.happyHour!.hours}',
+                onTap: () => context.push('/bar/${listing.bar.id}'),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _NewPlacesSection extends ConsumerWidget {
+  const _NewPlacesSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final places = (ref.watch(placesProvider).valueOrNull ?? const [])
+        .where((place) => place.isNew)
+        .toList();
+    if (places.isEmpty) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const SectionHeader(title: '✨ Nowe w mieście'),
+        _HorizontalCards(
+          children: [
+            for (final place in places)
+              _MiniCard(
+                emoji: place.emoji,
+                title: place.name,
+                subtitle: place.district,
+                footer: 'Nowe miejsce',
+                onTap: () => context.push(
+                  place.type == PlaceType.bar
+                      ? '/bar/${place.id}'
+                      : '/landmark/${place.id}',
+                ),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+/// Districts without a passport stamp that have places to discover.
+class _UnvisitedDistrictsCard extends ConsumerWidget {
+  const _UnvisitedDistrictsCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final stamped = ref.watch(stampedDistrictsProvider);
+    final places = ref.watch(placesProvider).valueOrNull ?? const [];
+    final districts =
+        ref.watch(districtsProvider).valueOrNull ?? const <CityDistrict>[];
+    final withPlaces = places.map((p) => p.districtNo).toSet();
+    final todo = districts
+        .where((d) => withPlaces.contains(d.no) && !stamped.contains(d.no))
+        .toList();
+    if (todo.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      child: Card(
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () => context.push('/passport'),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Dzielnice do odkrycia',
+                  style: theme.textTheme.titleMedium,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Pierwszy meldunek w nowej dzielnicy: +20 pkt i pieczątka '
+                  'w Paszporcie.',
+                  style: theme.textTheme.bodySmall,
+                ),
+                const SizedBox(height: 10),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    for (final district in todo)
+                      Chip(
+                        avatar: const Icon(Icons.lock_open, size: 16),
+                        label: Text('${district.roman} ${district.name}'),
+                      ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PassportCard extends ConsumerWidget {
+  const _PassportCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final stamped = ref.watch(stampedDistrictsProvider);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      child: Card(
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () => context.push('/passport'),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                const Text('🛂', style: TextStyle(fontSize: 36)),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Paszport Krakowa',
+                        style: theme.textTheme.titleMedium,
+                      ),
+                      Text(
+                        '${stamped.length}/18 dzielnic · zbieraj pieczątki '
+                        'za odkrywanie miasta',
+                        style: theme.textTheme.bodySmall,
+                      ),
+                      const SizedBox(height: 6),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(6),
+                        child: LinearProgressIndicator(
+                          value: stamped.length / 18,
+                          minHeight: 6,
+                          color: AppColors.green,
+                          backgroundColor:
+                              theme.colorScheme.surfaceContainerHighest,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Icon(Icons.chevron_right),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// Smart City: live (or forecast) crowd levels and a nudge towards calmer
 /// districts.
 class _CityNowCard extends ConsumerWidget {
@@ -310,7 +571,8 @@ class _CityNowCard extends ConsumerWidget {
     if (zones.isEmpty) return const SizedBox.shrink();
 
     final sorted = [...zones]..sort(
-        (a, b) => b.crowdAt(clock.minutes).compareTo(a.crowdAt(clock.minutes)));
+        (a, b) => b.crowdAt(clock.minutes).compareTo(a.crowdAt(clock.minutes)),
+      );
     final busiest = sorted.first;
     final calmest = sorted.last;
 
@@ -413,89 +675,15 @@ class _ZoneCrowdRow extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 8),
-          SizedBox(width: 56, child: _CrowdText(level: level)),
-        ],
-      ),
-    );
-  }
-}
-
-class _CrowdText extends StatelessWidget {
-  const _CrowdText({required this.level});
-
-  final CrowdLevel level;
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      level.label,
-      textAlign: TextAlign.end,
-      style: TextStyle(color: level.color, fontWeight: FontWeight.w800),
-    );
-  }
-}
-
-class _GemsCarousel extends ConsumerWidget {
-  const _GemsCarousel({required this.bars});
-
-  final List<Bar> bars;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final listings = ref.watch(barListingsProvider).valueOrNull ?? const [];
-    final gems = listings.where((l) => l.bar.isHiddenGem).toList()
-      ..sort((a, b) => (b.friendsRating ?? 0).compareTo(a.friendsRating ?? 0));
-    if (gems.isEmpty) return const SizedBox(height: 8);
-
-    return SizedBox(
-      height: 168,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        itemCount: gems.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 10),
-        itemBuilder: (context, index) {
-          final listing = gems[index];
-          final bar = listing.bar;
-          return SizedBox(
-            width: 150,
-            child: Card(
-              clipBehavior: Clip.antiAlias,
-              child: InkWell(
-                onTap: () => context.push('/bar/${bar.id}'),
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(bar.emoji, style: const TextStyle(fontSize: 30)),
-                      const SizedBox(height: 6),
-                      Text(
-                        bar.name,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context)
-                            .textTheme
-                            .titleSmall
-                            ?.copyWith(fontWeight: FontWeight.w800),
-                      ),
-                      Text(
-                        bar.district,
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                      const Spacer(),
-                      FriendsScoreBadge(
-                        rating: listing.friendsRating,
-                        count: listing.friendsRatingCount,
-                        compact: true,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+          SizedBox(
+            width: 56,
+            child: Text(
+              level.label,
+              textAlign: TextAlign.end,
+              style: TextStyle(color: level.color, fontWeight: FontWeight.w800),
             ),
-          );
-        },
+          ),
+        ],
       ),
     );
   }
@@ -547,6 +735,85 @@ class _LeagueCard extends ConsumerWidget {
                 ),
               ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _HorizontalCards extends StatelessWidget {
+  const _HorizontalCards({required this.children});
+
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 168,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        itemCount: children.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 10),
+        itemBuilder: (context, index) =>
+            SizedBox(width: 150, child: children[index]),
+      ),
+    );
+  }
+}
+
+class _MiniCard extends StatelessWidget {
+  const _MiniCard({
+    required this.emoji,
+    required this.title,
+    required this.subtitle,
+    required this.footer,
+    required this.onTap,
+  });
+
+  final String emoji;
+  final String title;
+  final String subtitle;
+  final String footer;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(emoji, style: const TextStyle(fontSize: 30)),
+              const SizedBox(height: 6),
+              Text(
+                title,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.titleSmall
+                    ?.copyWith(fontWeight: FontWeight.w800),
+              ),
+              Text(
+                subtitle,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.bodySmall,
+              ),
+              const Spacer(),
+              Text(
+                footer,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.labelSmall
+                    ?.copyWith(fontWeight: FontWeight.w800),
+              ),
+            ],
           ),
         ),
       ),

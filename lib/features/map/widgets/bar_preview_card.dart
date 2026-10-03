@@ -23,7 +23,7 @@ class BarPreviewCard extends ConsumerWidget {
     final theme = Theme.of(context);
     final bar = listing.bar;
     final inPlan = ref.watch(
-      plannerProvider.select((plan) => plan.barIds.contains(bar.id)),
+      plannerProvider.select((plan) => plan.stopIds.contains(bar.id)),
     );
     final status = barStatusOf(bar, inRoute: inPlan, crowd: listing.crowd);
 

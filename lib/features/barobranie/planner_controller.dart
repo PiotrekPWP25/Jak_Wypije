@@ -3,8 +3,9 @@ import 'dart:math' as math;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/local/local_storage.dart';
-import '../../data/models/bar.dart';
 import '../../data/models/evening_plan.dart';
+import '../../data/models/place.dart';
+import '../../data/models/trip.dart';
 import 'plan_calculator.dart';
 
 class PlannerNotifier extends Notifier<EveningPlan> {
@@ -19,41 +20,51 @@ class PlannerNotifier extends Notifier<EveningPlan> {
     ref.read(localStorageProvider).savePlan(plan);
   }
 
-  void add(String barId) {
-    if (state.barIds.contains(barId)) return;
-    _update(state.copyWith(barIds: [...state.barIds, barId]));
+  void add(String placeId) {
+    if (state.stopIds.contains(placeId)) return;
+    _update(state.copyWith(stopIds: [...state.stopIds, placeId]));
   }
 
-  void remove(String barId) {
+  void remove(String placeId) {
     _update(
-      state.copyWith(barIds: state.barIds.where((id) => id != barId).toList()),
+      state.copyWith(
+        stopIds: state.stopIds.where((id) => id != placeId).toList(),
+      ),
     );
   }
 
-  void toggle(String barId) {
-    if (state.barIds.contains(barId)) {
-      remove(barId);
+  void toggle(String placeId) {
+    if (state.stopIds.contains(placeId)) {
+      remove(placeId);
     } else {
-      add(barId);
+      add(placeId);
     }
   }
 
   /// Swaps [oldId] for [newId] in place (e.g. a calmer alternative).
   void replace(String oldId, String newId) {
-    if (state.barIds.contains(newId)) return;
+    if (state.stopIds.contains(newId)) return;
     _update(
       state.copyWith(
-        barIds: [for (final id in state.barIds) id == oldId ? newId : id],
+        stopIds: [for (final id in state.stopIds) id == oldId ? newId : id],
       ),
     );
   }
 
+  /// Replaces the route with a curated trip.
+  void loadTrip(Trip trip) => _update(
+        state.copyWith(
+          stopIds: trip.stopIds,
+          startMinutes: trip.startMinutes,
+        ),
+      );
+
   /// [newIndex] is the final position after removing the item at [oldIndex].
   void moveStop(int oldIndex, int newIndex) {
-    final ids = [...state.barIds];
+    final ids = [...state.stopIds];
     final moved = ids.removeAt(oldIndex);
     ids.insert(newIndex, moved);
-    _update(state.copyWith(barIds: ids));
+    _update(state.copyWith(stopIds: ids));
   }
 
   void setStartMinutes(int minutes) =>
@@ -68,10 +79,10 @@ class PlannerNotifier extends Notifier<EveningPlan> {
   void setMinutesPerStop(int minutes) =>
       _update(state.copyWith(minutesPerStop: minutes));
 
-  void optimize(List<Bar> stops) =>
-      _update(state.copyWith(barIds: optimizeRoute(stops)));
+  void optimize(List<Place> stops) =>
+      _update(state.copyWith(stopIds: optimizeRoute(stops)));
 
-  void clear() => _update(state.copyWith(barIds: const []));
+  void clear() => _update(state.copyWith(stopIds: const []));
 }
 
 final plannerProvider = NotifierProvider<PlannerNotifier, EveningPlan>(

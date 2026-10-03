@@ -8,9 +8,9 @@ import '../../core/utils/formatters.dart';
 import '../../core/utils/geo.dart';
 import '../../core/utils/time.dart';
 import '../../data/location/location_provider.dart';
-import '../../data/models/bar.dart';
+import '../../data/repositories/place_repository.dart';
 import '../../data/models/transit_stop.dart';
-import '../../data/repositories/bar_repository.dart';
+
 import '../../data/repositories/city_repository.dart';
 import '../../widgets/empty_state.dart';
 import '../map/widgets/bar_marker.dart';
@@ -26,14 +26,14 @@ class SafeReturnScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final bars = ref.watch(barsProvider).valueOrNull ?? const <Bar>[];
+    final placesById = ref.watch(placesByIdProvider);
     final plan = ref.watch(plannerProvider);
     final zones = ref.watch(zonesByIdProvider);
     final transit =
         ref.watch(transitStopsProvider).valueOrNull ?? const <TransitStop>[];
     final position = ref.watch(userPositionProvider).valueOrNull;
 
-    final stops = resolveStops(plan, bars);
+    final stops = resolveStops(plan, placesById);
     final LatLng from;
     final int leaveAt;
     final String fromLabel;

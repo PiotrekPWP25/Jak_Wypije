@@ -33,6 +33,7 @@ class LocalStorage {
   static const String _userNameKey = 'user_name';
   static const String _themeModeKey = 'theme_mode';
   static const String _safeReturnsKey = 'safe_returns';
+  static const String _userModeKey = 'user_mode';
 
   List<CheckIn> loadCheckIns() =>
       List<CheckIn>.unmodifiable(_readList(_checkInsKey).map(CheckIn.fromJson));
@@ -81,6 +82,13 @@ class LocalStorage {
 
   Future<void> saveSafeReturns(int count) async {
     await _prefs.setInt(_safeReturnsKey, count);
+  }
+
+  /// `tourist` / `local`, or `null` before onboarding.
+  String? loadUserMode() => _prefs.getString(_userModeKey);
+
+  Future<void> saveUserMode(String mode) async {
+    await _prefs.setString(_userModeKey, mode);
   }
 
   List<Map<String, dynamic>> _readList(String key) {

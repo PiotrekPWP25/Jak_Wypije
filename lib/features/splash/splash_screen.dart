@@ -8,7 +8,9 @@ import '../../core/theme/app_colors.dart';
 import '../../data/location/location_provider.dart';
 import '../../data/repositories/bar_repository.dart';
 import '../../data/repositories/city_repository.dart';
+import '../../data/repositories/place_repository.dart';
 import '../../data/repositories/social_repository.dart';
+import '../onboarding/user_mode.dart';
 
 /// Branded loading screen: the logo pops in while a beer "pours" into the
 /// progress bar and the app preloads bars, city data and location.
@@ -57,6 +59,10 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
         ref.read(friendsProvider.future),
         ref.read(zonesProvider.future),
         ref.read(transitStopsProvider.future),
+        ref.read(landmarksProvider.future),
+        ref.read(tripsProvider.future),
+        ref.read(eventsProvider.future),
+        ref.read(districtsProvider.future),
         ref
             .read(userPositionProvider.future)
             .timeout(const Duration(seconds: 3), onTimeout: () => null),
@@ -65,7 +71,9 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     } catch (_) {
       // Screens show their own error states; never block on the splash.
     }
-    if (mounted) context.go('/start');
+    if (!mounted) return;
+    // First run: ask whether the user is a tourist or a local.
+    context.go(ref.read(userModeProvider) == null ? '/onboarding' : '/start');
   }
 
   @override

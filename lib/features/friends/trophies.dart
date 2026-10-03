@@ -67,31 +67,48 @@ class TrophyProgress {
   }
 }
 
-int _uniqueBars(ProfileStats s) => s.uniqueBars;
-int _hiddenGems(ProfileStats s) => s.hiddenGems;
-int _offPeak(ProfileStats s) => s.offPeakCheckIns;
 int _districts(ProfileStats s) => s.districts;
+int _landmarks(ProfileStats s) => s.landmarks;
+int _walkedKm(ProfileStats s) => s.walkedKm;
+int _routes(ProfileStats s) => s.routesCompleted;
+int _offPeak(ProfileStats s) => s.offPeakCheckIns;
 int _barrierFree(ProfileStats s) => s.barrierFreeBars;
 int _safeReturns(ProfileStats s) => s.safeReturns;
 int _reviews(ProfileStats s) => s.reviews;
-int _planStops(ProfileStats s) => s.planStops;
 
+/// Trophies reward exploring the city – none of them counts bars or drinks.
 const List<TrophyDefinition> allTrophies = [
   TrophyDefinition(
-    id: 'explorer',
-    title: 'Odkrywca',
-    description: 'Odwiedzaj różne bary.',
-    emoji: '🧭',
-    thresholds: [3, 5, 10],
-    metric: _uniqueBars,
+    id: 'districts',
+    title: 'Odkrywca dzielnic',
+    description: 'Zbieraj pieczątki dzielnic w Paszporcie Krakowa.',
+    emoji: '🗺️',
+    thresholds: [2, 4, 6],
+    metric: _districts,
   ),
   TrophyDefinition(
-    id: 'gems',
-    title: 'Łowca perełek',
-    description: 'Zamelduj się w ukrytych perełkach.',
-    emoji: '💎',
-    thresholds: [1, 3, 6],
-    metric: _hiddenGems,
+    id: 'landmarks',
+    title: 'Śladami historii',
+    description: 'Odwiedzaj zabytki, punkty widokowe i street art.',
+    emoji: '🏛️',
+    thresholds: [2, 5, 10],
+    metric: _landmarks,
+  ),
+  TrophyDefinition(
+    id: 'walker',
+    title: 'Spacerowicz',
+    description: 'Kilometry przebyte pieszo między przystankami.',
+    emoji: '🚶',
+    thresholds: [2, 5, 15],
+    metric: _walkedKm,
+  ),
+  TrophyDefinition(
+    id: 'routes',
+    title: 'Trasy ukończone',
+    description: 'Przejdź całą zaplanowaną trasę z co najmniej jedną atrakcją.',
+    emoji: '🏁',
+    thresholds: [1, 3, 5],
+    metric: _routes,
   ),
   TrophyDefinition(
     id: 'off_peak',
@@ -100,14 +117,6 @@ const List<TrophyDefinition> allTrophies = [
     emoji: '🌿',
     thresholds: [1, 3, 6],
     metric: _offPeak,
-  ),
-  TrophyDefinition(
-    id: 'districts',
-    title: 'Obieżyświat',
-    description: 'Poznaj bary w różnych dzielnicach.',
-    emoji: '🗺️',
-    thresholds: [2, 3, 5],
-    metric: _districts,
   ),
   TrophyDefinition(
     id: 'barrier_free',
@@ -128,17 +137,9 @@ const List<TrophyDefinition> allTrophies = [
   TrophyDefinition(
     id: 'critic',
     title: 'Krytyk',
-    description: 'Oceniaj bary dla znajomych.',
+    description: 'Oceniaj miejsca dla znajomych.',
     emoji: '📝',
     thresholds: [1, 3, 6],
     metric: _reviews,
-  ),
-  TrophyDefinition(
-    id: 'strategist',
-    title: 'Strateg',
-    description: 'Zaplanuj Barobranie z kilkoma przystankami.',
-    emoji: '🗓️',
-    thresholds: [2, 3, 5],
-    metric: _planStops,
   ),
 ];

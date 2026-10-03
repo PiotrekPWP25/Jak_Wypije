@@ -5,7 +5,7 @@ import 'package:jak_wypije/features/friends/leagues.dart';
 import 'package:jak_wypije/features/friends/trophies.dart';
 
 CheckIn _checkIn(DateTime at, {int points = 10}) => CheckIn(
-      barId: 'b',
+      placeId: 'b',
       timestamp: at,
       points: points,
       method: CheckInMethod.demo,
@@ -73,12 +73,13 @@ void main() {
   });
 
   test('trophy tiers follow the thresholds', () {
-    final explorer = allTrophies.firstWhere((t) => t.id == 'explorer');
+    // "Śladami historii": 2 / 5 / 10 landmarks.
+    final history = allTrophies.firstWhere((t) => t.id == 'landmarks');
     TrophyProgress at(int value) =>
-        TrophyProgress(definition: explorer, value: value);
+        TrophyProgress(definition: history, value: value);
 
     expect(at(0).tier, TrophyTier.none);
-    expect(at(3).tier, TrophyTier.bronze);
+    expect(at(2).tier, TrophyTier.bronze);
     expect(at(5).tier, TrophyTier.silver);
     expect(at(12).tier, TrophyTier.gold);
     expect(at(4).nextThreshold, 5);

@@ -2,10 +2,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/local/local_storage.dart';
 import '../../data/models/bar.dart';
-import '../../data/repositories/bar_repository.dart';
-import '../barobranie/planner_controller.dart';
+import '../../data/models/landmark.dart';
+import '../../data/repositories/place_repository.dart';
 import '../barobranie/safe_return.dart';
 import '../checkin/check_in_controller.dart';
+import '../gamification/gamification_providers.dart';
+import '../gamification/scoring.dart';
 import '../friends/reviews_controller.dart';
 import '../friends/trophies.dart';
 
@@ -28,53 +30,61 @@ final userNameProvider = NotifierProvider<UserNameNotifier, String>(
 class ProfileStats {
   const ProfileStats({
     required this.checkIns,
-    required this.uniqueBars,
+    required this.uniquePlaces,
     required this.districts,
-    required this.hiddenGems,
+    required this.landmarks,
+    required this.walkedKm,
+    required this.routesCompleted,
     required this.offPeakCheckIns,
     required this.barrierFreeBars,
     required this.reviews,
-    required this.planStops,
     required this.safeReturns,
     required this.points,
   });
 
   final int checkIns;
-  final int uniqueBars;
+  final int uniquePlaces;
+
+  /// Passport stamps (Kraków districts visited).
   final int districts;
-  final int hiddenGems;
+  final int landmarks;
+  final int walkedKm;
+  final int routesCompleted;
   final int offPeakCheckIns;
   final int barrierFreeBars;
   final int reviews;
-  final int planStops;
   final int safeReturns;
   final int points;
 }
 
 final profileStatsProvider = Provider<ProfileStats>((ref) {
   final checkIns = ref.watch(checkInsProvider);
-  final bars = ref.watch(barsProvider).valueOrNull ?? const <Bar>[];
+  final placesById = ref.watch(placesByIdProvider);
   final myReviews = ref.watch(myReviewsProvider);
+  final walked = ref.watch(walkedMetersTotalProvider);
 
-  final barsById = {for (final bar in bars) bar.id: bar};
-  final visitedIds = checkIns.map((checkIn) => checkIn.barId).toSet();
-  final visitedBars = visitedIds.map((id) => barsById[id]).nonNulls.toList();
+  final visitedIds = checkIns.map((checkIn) => checkIn.placeId).toSet();
+  final visited = visitedIds.map((id) => placesById[id]).nonNulls.toList();
   final checkInPoints =
       checkIns.fold<int>(0, (sum, checkIn) => sum + checkIn.points);
 
   return ProfileStats(
     checkIns: checkIns.length,
-    uniqueBars: visitedIds.length,
-    districts: visitedBars.map((bar) => bar.district).toSet().length,
-    hiddenGems: visitedBars.where((bar) => bar.isHiddenGem).length,
+    uniquePlaces: visitedIds.length,
+    districts: ref.watch(stampedDistrictsProvider).length,
+    landmarks: visited.whereType<Landmark>().length,
+    walkedKm: walked ~/ 1000,
+    routesCompleted: checkIns.where((c) => c.completedRoute).length,
     offPeakCheckIns: checkIns.where((checkIn) => checkIn.offPeak).length,
-    barrierFreeBars:
-        visitedBars.where((bar) => bar.accessibility.isBarrierFree).length,
+    barrierFreeBars: visited
+        .whereType<Bar>()
+        .where((bar) => bar.accessibility.isBarrierFree)
+        .length,
     reviews: myReviews.length,
-    planStops: ref.watch(plannerProvider).barIds.length,
     safeReturns: ref.watch(safeReturnsProvider),
-    points:
-        checkInPoints + myReviews.length * MyReviewsNotifier.pointsPerReview,
+    points: checkInPoints +
+        myReviews.length * MyReviewsNotifier.pointsPerReview +
+        walkingXp(walked),
   );
 });
 

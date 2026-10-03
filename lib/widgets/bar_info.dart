@@ -7,6 +7,63 @@ import '../data/models/city_zone.dart';
 String formatRating(double rating) =>
     rating.toStringAsFixed(1).replaceAll('.', ',');
 
+/// "✨ Nowe", "🥤 Opcje 0%", "🕒 Happy hour 17:00–19:00" badges.
+class BarBadges extends StatelessWidget {
+  const BarBadges({super.key, required this.bar, this.happyNow = false});
+
+  final Bar bar;
+
+  /// Highlights the happy hour when it is running right now.
+  final bool happyNow;
+
+  @override
+  Widget build(BuildContext context) {
+    final happy = bar.happyHour;
+    return Wrap(
+      spacing: 6,
+      runSpacing: 6,
+      children: [
+        if (bar.isNew) const _Badge(text: '✨ Nowe', color: AppColors.amber),
+        if (bar.nonAlcoholic)
+          const _Badge(text: '🥤 Opcje 0%', color: AppColors.green),
+        if (happy != null)
+          _Badge(
+            text: happyNow
+                ? '🕒 Teraz: ${happy.label}'
+                : '🕒 ${happy.hours} ${happy.label}',
+            color: happyNow ? AppColors.coral : AppColors.night,
+          ),
+      ],
+    );
+  }
+}
+
+class _Badge extends StatelessWidget {
+  const _Badge({required this.text, required this.color});
+
+  final String text;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withAlpha(35),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: color.withAlpha(120)),
+      ),
+      child: Text(
+        text,
+        style: Theme.of(context)
+            .textTheme
+            .labelSmall
+            ?.copyWith(fontWeight: FontWeight.w800),
+      ),
+    );
+  }
+}
+
 extension CrowdLevelX on CrowdLevel {
   String get label => switch (this) {
         CrowdLevel.low => 'Luźno',

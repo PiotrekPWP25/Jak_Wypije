@@ -1,10 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/utils/time.dart';
 import '../../data/local/local_storage.dart';
 import '../../data/models/bar.dart';
 import '../../data/models/check_in.dart';
 import '../../data/models/city_zone.dart';
+import '../../data/models/evening_plan.dart';
+import '../../data/models/place.dart';
+import '../gamification/scoring.dart';
 
 class CheckInResult {
   const CheckInResult({
@@ -12,75 +14,68 @@ class CheckInResult {
     required this.message,
     this.points = 0,
     this.bonuses = const [],
+    this.completedRoute = false,
   });
 
   final bool success;
   final String message;
   final int points;
   final List<String> bonuses;
+  final bool completedRoute;
 }
 
 class CheckInsNotifier extends Notifier<List<CheckIn>> {
-  static const int basePoints = 10;
-  static const int firstVisitBonus = 5;
-  static const int hiddenGemBonus = 15;
-
-  /// Smart City: rewards spreading nightlife away from crowded zones.
-  static const int offPeakBonus = 10;
-
   @override
   List<CheckIn> build() => ref.watch(localStorageProvider).loadCheckIns();
 
-  /// Registers a visit. One check-in per bar per evening.
+  /// Registers a visit to a bar or a landmark. One check-in per place per
+  /// evening; points follow [scoreCheckIn].
   CheckInResult checkIn(
-    Bar bar, {
+    Place place, {
     required CheckInMethod method,
+    Map<String, Place> placesById = const {},
     CityZone? zone,
+    EveningPlan? plan,
     DateTime? now,
   }) {
     final at = now ?? DateTime.now();
     final alreadyToday = state.any(
       (checkIn) =>
-          checkIn.barId == bar.id && isSameEvening(checkIn.timestamp, at),
+          checkIn.placeId == place.id && isSameEvening(checkIn.timestamp, at),
     );
     if (alreadyToday) {
       return CheckInResult(
         success: false,
-        message: '${bar.name} masz już dziś zaliczony – wróć jutro!',
+        message: '${place.name} masz już dziś zaliczone – wróć innego dnia!',
       );
     }
 
-    var points = basePoints;
-    final bonuses = <String>[];
-    if (!state.any((checkIn) => checkIn.barId == bar.id)) {
-      points += firstVisitBonus;
-      bonuses.add('Pierwsza wizyta +$firstVisitBonus');
-    }
-    if (bar.isHiddenGem) {
-      points += hiddenGemBonus;
-      bonuses.add('Ukryta perełka +$hiddenGemBonus');
-    }
-    final offPeak =
-        zone != null && zone.levelAt(eveningMinutes(at)) == CrowdLevel.low;
-    if (offPeak) {
-      points += offPeakBonus;
-      bonuses.add('Poza tłokiem +$offPeakBonus');
-    }
-
+    final score = scoreCheckIn(
+      place: place,
+      history: state,
+      at: at,
+      placesById: {...placesById, place.id: place},
+      zone: zone,
+      plan: plan,
+    );
     final checkIn = CheckIn(
-      barId: bar.id,
+      placeId: place.id,
       timestamp: at,
-      points: points,
+      points: score.points,
       method: method,
-      offPeak: offPeak,
+      placeType: place.type,
+      districtNo: place.districtNo,
+      offPeak: score.offPeak,
+      completedRoute: score.completedRoute,
     );
     state = List<CheckIn>.unmodifiable([checkIn, ...state]);
     ref.read(localStorageProvider).saveCheckIns(state);
     return CheckInResult(
       success: true,
-      message: 'Zameldowano w: ${bar.name}',
-      points: points,
-      bonuses: bonuses,
+      message: 'Zameldowano: ${place.name}',
+      points: score.points,
+      bonuses: score.bonuses,
+      completedRoute: score.completedRoute,
     );
   }
 }
@@ -88,14 +83,6 @@ class CheckInsNotifier extends Notifier<List<CheckIn>> {
 final checkInsProvider = NotifierProvider<CheckInsNotifier, List<CheckIn>>(
   CheckInsNotifier.new,
 );
-
-/// An "evening" lasts until 6 a.m. of the next day.
-bool isSameEvening(DateTime a, DateTime b) {
-  const shift = Duration(hours: 6);
-  final x = a.subtract(shift);
-  final y = b.subtract(shift);
-  return x.year == y.year && x.month == y.month && x.day == y.day;
-}
 
 /// Extracts the bar id from a `jakwypije:bar:<id>` QR payload.
 String? parseBarQr(String? raw) {

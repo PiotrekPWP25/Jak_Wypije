@@ -161,6 +161,29 @@ class _FilterSheetState extends State<_FilterSheet> {
                   onChanged: (v) =>
                       setState(() => _filters = _filters.copyWith(offPeak: v)),
                 ),
+                _Toggle(
+                  title: 'Opcje bezalkoholowe (0%, lemoniady)',
+                  icon: Icons.local_drink_outlined,
+                  value: _filters.nonAlcoholic,
+                  onChanged: (v) => setState(
+                    () => _filters = _filters.copyWith(nonAlcoholic: v),
+                  ),
+                ),
+                _Toggle(
+                  title: 'Happy hour teraz',
+                  icon: Icons.local_offer_outlined,
+                  value: _filters.happyHourNow,
+                  onChanged: (v) => setState(
+                    () => _filters = _filters.copyWith(happyHourNow: v),
+                  ),
+                ),
+                _Toggle(
+                  title: 'Nowe miejsca',
+                  icon: Icons.fiber_new_outlined,
+                  value: _filters.onlyNew,
+                  onChanged: (v) =>
+                      setState(() => _filters = _filters.copyWith(onlyNew: v)),
+                ),
                 const SizedBox(height: 16),
               ],
             ),

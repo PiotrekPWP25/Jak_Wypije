@@ -22,6 +22,7 @@ import '../barobranie/planner_controller.dart';
 import '../barobranie/safe_return.dart';
 import '../bars/bars_providers.dart';
 import '../checkin/check_in_controller.dart';
+import '../events/events_widgets.dart';
 import '../friends/reviews_controller.dart';
 import '../profile/profile_providers.dart';
 import 'add_review_dialog.dart';
@@ -82,11 +83,11 @@ class _BarDetailBody extends ConsumerWidget {
     final transit =
         ref.watch(transitStopsProvider).valueOrNull ?? const <TransitStop>[];
     final inPlan = ref.watch(
-      plannerProvider.select((plan) => plan.barIds.contains(bar.id)),
+      plannerProvider.select((plan) => plan.stopIds.contains(bar.id)),
     );
     final visits = ref
         .watch(checkInsProvider)
-        .where((checkIn) => checkIn.barId == bar.id)
+        .where((checkIn) => checkIn.placeId == bar.id)
         .length;
     final reviews =
         (ref.watch(allReviewsProvider).valueOrNull ?? const <Review>[])
@@ -101,6 +102,10 @@ class _BarDetailBody extends ConsumerWidget {
       stops: transit,
     );
     final kitchen = bar.kitchenUntil;
+    final events = ref
+        .watch(upcomingEventsProvider)
+        .where((e) => e.event.placeId == bar.id)
+        .toList();
 
     return ListView(
       padding: const EdgeInsets.all(16),
@@ -143,6 +148,10 @@ class _BarDetailBody extends ConsumerWidget {
         ),
         const SizedBox(height: 4),
         PublicRatingText(bar: bar),
+        if (bar.isNew || bar.nonAlcoholic || bar.happyHour != null) ...[
+          const SizedBox(height: 8),
+          BarBadges(bar: bar, happyNow: listing?.isHappyHour ?? false),
+        ],
         const SizedBox(height: 12),
         Wrap(
           spacing: 8,
@@ -264,6 +273,14 @@ class _BarDetailBody extends ConsumerWidget {
           ),
           const SizedBox(height: 6),
           Text(zone.note, style: theme.textTheme.bodySmall),
+        ],
+        if (events.isNotEmpty) ...[
+          const SectionHeader(
+            title: 'Wydarzenia tutaj',
+            padding: EdgeInsets.only(top: 24, bottom: 8),
+          ),
+          for (final event in events)
+            EventTile(upcoming: event, showPlace: false),
         ],
         if (ride != null) SafeReturnCard(option: ride, leaveAt: bar.closesAt),
         SectionHeader(

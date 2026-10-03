@@ -8,20 +8,42 @@
     "lat": 50.0518,
     "lng": 19.9449,
     "description": "Malutki pub z kraftem z małopolskich browarów. Ściana kapsli, które goście znaleźli w kieszeniach – każdy ma swoją historię.",
-    "tags": ["piwo rzemieślnicze", "kameralnie"],
+    "tags": [
+      "piwo rzemieślnicze",
+      "kameralnie"
+    ],
     "emoji": "🍺",
     "isHiddenGem": true,
-    "beer": {"min": 13, "max": 16},
-    "shot": {"min": 9, "max": 12},
-    "drink": {"min": 24, "max": 30},
-    "food": {"min": 25, "max": 35},
+    "beer": {
+      "min": 13,
+      "max": 16
+    },
+    "shot": {
+      "min": 9,
+      "max": 12
+    },
+    "drink": {
+      "min": 24,
+      "max": 30
+    },
+    "food": {
+      "min": 25,
+      "max": 35
+    },
     "kitchenUntil": "21:00",
     "acceptsCards": true,
     "opensAt": "16:00",
     "closesAt": "02:00",
     "publicRating": 4.6,
     "publicRatingCount": 412,
-    "accessibility": {"stepFree": false, "accessibleToilet": false, "quietArea": true}
+    "accessibility": {
+      "stepFree": false,
+      "accessibleToilet": false,
+      "quietArea": true
+    },
+    "districtNo": 1,
+    "nonAlcoholic": true,
+    "isNew": false
   },
   {
     "id": "b02",
@@ -32,20 +54,42 @@
     "lat": 50.0636,
     "lng": 19.9352,
     "description": "Bar z rezydentnymi kotami i półką planszówek. Popularny, bywa tłoczno w weekendy.",
-    "tags": ["koty", "planszówki"],
+    "tags": [
+      "koty",
+      "planszówki"
+    ],
     "emoji": "🐈",
     "isHiddenGem": false,
-    "beer": {"min": 17, "max": 21},
-    "shot": {"min": 12, "max": 16},
-    "drink": {"min": 30, "max": 38},
-    "food": {"min": 35, "max": 50},
+    "beer": {
+      "min": 17,
+      "max": 21
+    },
+    "shot": {
+      "min": 12,
+      "max": 16
+    },
+    "drink": {
+      "min": 30,
+      "max": 38
+    },
+    "food": {
+      "min": 35,
+      "max": 50
+    },
     "kitchenUntil": "23:00",
     "acceptsCards": true,
     "opensAt": "14:00",
     "closesAt": "01:00",
     "publicRating": 4.4,
     "publicRatingCount": 2310,
-    "accessibility": {"stepFree": true, "accessibleToilet": true, "quietArea": false}
+    "accessibility": {
+      "stepFree": true,
+      "accessibleToilet": true,
+      "quietArea": false
+    },
+    "districtNo": 1,
+    "nonAlcoholic": true,
+    "isNew": false
   },
   {
     "id": "b03",
@@ -54,20 +98,39 @@
     "district": "Stare Miasto",
     "zoneId": "rynek",
     "lat": 50.0601,
-    "lng": 19.9390,
+    "lng": 19.939,
     "description": "Ceglana piwnica przy świecach. W czwartki jam session – przynieś instrument albo po prostu słuchaj.",
-    "tags": ["piwnica", "jazz"],
+    "tags": [
+      "piwnica",
+      "jazz"
+    ],
     "emoji": "🕯️",
     "isHiddenGem": true,
-    "beer": {"min": 14, "max": 17},
-    "shot": {"min": 10, "max": 14},
-    "drink": {"min": 26, "max": 34},
+    "beer": {
+      "min": 14,
+      "max": 17
+    },
+    "shot": {
+      "min": 10,
+      "max": 14
+    },
+    "drink": {
+      "min": 26,
+      "max": 34
+    },
     "acceptsCards": true,
     "opensAt": "18:00",
     "closesAt": "03:00",
     "publicRating": 4.5,
     "publicRatingCount": 980,
-    "accessibility": {"stepFree": false, "accessibleToilet": false, "quietArea": false}
+    "accessibility": {
+      "stepFree": false,
+      "accessibleToilet": false,
+      "quietArea": false
+    },
+    "districtNo": 1,
+    "nonAlcoholic": false,
+    "isNew": false
   },
   {
     "id": "b04",
@@ -78,20 +141,47 @@
     "lat": 50.0585,
     "lng": 19.9567,
     "description": "Wnętrze z prawdziwego wagonu tramwajowego z lat 70. Bilety skasowane w kasowniku dają zniżkę na drugie piwo.",
-    "tags": ["retro", "tanio"],
+    "tags": [
+      "retro",
+      "tanio"
+    ],
     "emoji": "🚋",
     "isHiddenGem": true,
-    "beer": {"min": 10, "max": 13},
-    "shot": {"min": 7, "max": 9},
-    "drink": {"min": 18, "max": 24},
-    "food": {"min": 20, "max": 28},
+    "beer": {
+      "min": 10,
+      "max": 13
+    },
+    "shot": {
+      "min": 7,
+      "max": 9
+    },
+    "drink": {
+      "min": 18,
+      "max": 24
+    },
+    "food": {
+      "min": 20,
+      "max": 28
+    },
     "kitchenUntil": "23:30",
     "acceptsCards": false,
     "opensAt": "17:00",
     "closesAt": "02:00",
     "publicRating": 4.3,
     "publicRatingCount": 356,
-    "accessibility": {"stepFree": true, "accessibleToilet": true, "quietArea": false}
+    "accessibility": {
+      "stepFree": true,
+      "accessibleToilet": true,
+      "quietArea": false
+    },
+    "districtNo": 2,
+    "nonAlcoholic": true,
+    "happyHour": {
+      "from": "17:00",
+      "to": "19:00",
+      "label": "Zapiekanka + lemoniada za 19 zł"
+    },
+    "isNew": false
   },
   {
     "id": "b05",
@@ -100,22 +190,44 @@
     "district": "Kazimierz",
     "zoneId": "kazimierz",
     "lat": 50.0503,
-    "lng": 19.9470,
+    "lng": 19.947,
     "description": "Duży ogródek i koncerty na żywo. Klasyk Kazimierza – jeśli szukasz tłumu, to tutaj.",
-    "tags": ["ogródek", "muzyka na żywo"],
+    "tags": [
+      "ogródek",
+      "muzyka na żywo"
+    ],
     "emoji": "🔔",
     "isHiddenGem": false,
-    "beer": {"min": 15, "max": 19},
-    "shot": {"min": 11, "max": 14},
-    "drink": {"min": 28, "max": 36},
-    "food": {"min": 30, "max": 45},
+    "beer": {
+      "min": 15,
+      "max": 19
+    },
+    "shot": {
+      "min": 11,
+      "max": 14
+    },
+    "drink": {
+      "min": 28,
+      "max": 36
+    },
+    "food": {
+      "min": 30,
+      "max": 45
+    },
     "kitchenUntil": "22:00",
     "acceptsCards": true,
     "opensAt": "12:00",
     "closesAt": "02:00",
     "publicRating": 4.2,
     "publicRatingCount": 3120,
-    "accessibility": {"stepFree": true, "accessibleToilet": false, "quietArea": false}
+    "accessibility": {
+      "stepFree": true,
+      "accessibleToilet": false,
+      "quietArea": false
+    },
+    "districtNo": 1,
+    "nonAlcoholic": true,
+    "isNew": false
   },
   {
     "id": "b06",
@@ -126,19 +238,38 @@
     "lat": 50.0447,
     "lng": 19.9536,
     "description": "Dawny kantor wymiany walut, dziś wymieniamy się tu chmielem. Degustacyjne deski i spokojna sala z tyłu.",
-    "tags": ["piwo rzemieślnicze", "degustacje"],
+    "tags": [
+      "piwo rzemieślnicze",
+      "degustacje"
+    ],
     "emoji": "🌿",
     "isHiddenGem": true,
-    "beer": {"min": 12, "max": 18},
-    "shot": {"min": 9, "max": 12},
-    "food": {"min": 18, "max": 26},
+    "beer": {
+      "min": 12,
+      "max": 18
+    },
+    "shot": {
+      "min": 9,
+      "max": 12
+    },
+    "food": {
+      "min": 18,
+      "max": 26
+    },
     "kitchenUntil": "21:00",
     "acceptsCards": true,
     "opensAt": "16:00",
     "closesAt": "00:00",
     "publicRating": 4.7,
     "publicRatingCount": 640,
-    "accessibility": {"stepFree": true, "accessibleToilet": true, "quietArea": true}
+    "accessibility": {
+      "stepFree": true,
+      "accessibleToilet": true,
+      "quietArea": true
+    },
+    "districtNo": 13,
+    "nonAlcoholic": true,
+    "isNew": false
   },
   {
     "id": "b07",
@@ -149,18 +280,37 @@
     "lat": 50.0497,
     "lng": 19.9284,
     "description": "Nalewki według przepisów z całej Małopolski i grzaniec, który podobno ogrzał samego smoka.",
-    "tags": ["nalewki", "grzaniec"],
+    "tags": [
+      "nalewki",
+      "grzaniec"
+    ],
     "emoji": "🐉",
     "isHiddenGem": true,
-    "beer": {"min": 10, "max": 12},
-    "shot": {"min": 6, "max": 9},
-    "drink": {"min": 16, "max": 22},
+    "beer": {
+      "min": 10,
+      "max": 12
+    },
+    "shot": {
+      "min": 6,
+      "max": 9
+    },
+    "drink": {
+      "min": 16,
+      "max": 22
+    },
     "acceptsCards": false,
     "opensAt": "17:00",
     "closesAt": "01:00",
     "publicRating": 4.6,
     "publicRatingCount": 295,
-    "accessibility": {"stepFree": false, "accessibleToilet": false, "quietArea": true}
+    "accessibility": {
+      "stepFree": false,
+      "accessibleToilet": false,
+      "quietArea": true
+    },
+    "districtNo": 8,
+    "nonAlcoholic": false,
+    "isNew": true
   },
   {
     "id": "b08",
@@ -171,20 +321,42 @@
     "lat": 50.0531,
     "lng": 19.9421,
     "description": "Meble z PRL-u, serwetki na każdym stoliku i nalewki pani Heli. Najspokojniejszy adres na Kazimierzu.",
-    "tags": ["vintage", "nalewki"],
+    "tags": [
+      "vintage",
+      "nalewki"
+    ],
     "emoji": "🧶",
     "isHiddenGem": true,
-    "beer": {"min": 11, "max": 14},
-    "shot": {"min": 7, "max": 10},
-    "drink": {"min": 20, "max": 26},
-    "food": {"min": 22, "max": 30},
+    "beer": {
+      "min": 11,
+      "max": 14
+    },
+    "shot": {
+      "min": 7,
+      "max": 10
+    },
+    "drink": {
+      "min": 20,
+      "max": 26
+    },
+    "food": {
+      "min": 22,
+      "max": 30
+    },
     "kitchenUntil": "22:30",
     "acceptsCards": true,
     "opensAt": "15:00",
     "closesAt": "00:00",
     "publicRating": 4.8,
     "publicRatingCount": 530,
-    "accessibility": {"stepFree": true, "accessibleToilet": true, "quietArea": true}
+    "accessibility": {
+      "stepFree": true,
+      "accessibleToilet": true,
+      "quietArea": true
+    },
+    "districtNo": 1,
+    "nonAlcoholic": true,
+    "isNew": false
   },
   {
     "id": "b09",
@@ -195,20 +367,47 @@
     "lat": 50.0712,
     "lng": 19.9241,
     "description": "Studencki bar z quizem w każdy wtorek. Tanio, głośno i bardzo serdecznie.",
-    "tags": ["studencko", "quiz"],
+    "tags": [
+      "studencko",
+      "quiz"
+    ],
     "emoji": "🏮",
     "isHiddenGem": true,
-    "beer": {"min": 10, "max": 13},
-    "shot": {"min": 6, "max": 8},
-    "drink": {"min": 15, "max": 20},
-    "food": {"min": 15, "max": 22},
+    "beer": {
+      "min": 10,
+      "max": 13
+    },
+    "shot": {
+      "min": 6,
+      "max": 8
+    },
+    "drink": {
+      "min": 15,
+      "max": 20
+    },
+    "food": {
+      "min": 15,
+      "max": 22
+    },
     "kitchenUntil": "00:00",
     "acceptsCards": true,
     "opensAt": "16:00",
     "closesAt": "02:00",
     "publicRating": 4.1,
     "publicRatingCount": 720,
-    "accessibility": {"stepFree": true, "accessibleToilet": false, "quietArea": false}
+    "accessibility": {
+      "stepFree": true,
+      "accessibleToilet": false,
+      "quietArea": false
+    },
+    "districtNo": 5,
+    "nonAlcoholic": true,
+    "happyHour": {
+      "from": "16:00",
+      "to": "19:00",
+      "label": "Deska serów −25% przed quizem"
+    },
+    "isNew": false
   },
   {
     "id": "b10",
@@ -217,22 +416,44 @@
     "district": "Stare Miasto",
     "zoneId": "rynek",
     "lat": 50.0665,
-    "lng": 19.9440,
+    "lng": 19.944,
     "description": "Przy dworcu, otwarte prawie do rana. Idealne na ostatni przystanek przed nocnym autobusem.",
-    "tags": ["do rana", "przy dworcu"],
+    "tags": [
+      "do rana",
+      "przy dworcu"
+    ],
     "emoji": "🚖",
     "isHiddenGem": false,
-    "beer": {"min": 16, "max": 20},
-    "shot": {"min": 12, "max": 15},
-    "drink": {"min": 30, "max": 40},
-    "food": {"min": 28, "max": 38},
+    "beer": {
+      "min": 16,
+      "max": 20
+    },
+    "shot": {
+      "min": 12,
+      "max": 15
+    },
+    "drink": {
+      "min": 30,
+      "max": 40
+    },
+    "food": {
+      "min": 28,
+      "max": 38
+    },
     "kitchenUntil": "03:00",
     "acceptsCards": true,
     "opensAt": "18:00",
     "closesAt": "05:30",
     "publicRating": 4.0,
     "publicRatingCount": 1890,
-    "accessibility": {"stepFree": true, "accessibleToilet": true, "quietArea": false}
+    "accessibility": {
+      "stepFree": true,
+      "accessibleToilet": true,
+      "quietArea": false
+    },
+    "districtNo": 1,
+    "nonAlcoholic": false,
+    "isNew": false
   },
   {
     "id": "b11",
@@ -243,20 +464,47 @@
     "lat": 50.0717,
     "lng": 20.0375,
     "description": "Bufet w stylu socrealistycznym, w którym czas zatrzymał się w 1985 roku. Najtańsze piwo w mieście i zero tłoku.",
-    "tags": ["PRL", "tanio"],
+    "tags": [
+      "PRL",
+      "tanio"
+    ],
     "emoji": "🏭",
     "isHiddenGem": true,
-    "beer": {"min": 8, "max": 10},
-    "shot": {"min": 5, "max": 7},
-    "drink": {"min": 14, "max": 18},
-    "food": {"min": 18, "max": 25},
+    "beer": {
+      "min": 8,
+      "max": 10
+    },
+    "shot": {
+      "min": 5,
+      "max": 7
+    },
+    "drink": {
+      "min": 14,
+      "max": 18
+    },
+    "food": {
+      "min": 18,
+      "max": 25
+    },
     "kitchenUntil": "22:00",
     "acceptsCards": false,
     "opensAt": "14:00",
     "closesAt": "23:00",
     "publicRating": 4.5,
     "publicRatingCount": 410,
-    "accessibility": {"stepFree": true, "accessibleToilet": true, "quietArea": true}
+    "accessibility": {
+      "stepFree": true,
+      "accessibleToilet": true,
+      "quietArea": true
+    },
+    "districtNo": 18,
+    "nonAlcoholic": true,
+    "happyHour": {
+      "from": "14:00",
+      "to": "17:00",
+      "label": "Obiad dnia za 19 zł"
+    },
+    "isNew": false
   },
   {
     "id": "b12",
@@ -264,23 +512,50 @@
     "address": "Bulwar Poleski 2",
     "district": "Dębniki",
     "zoneId": "debniki",
-    "lat": 50.0520,
-    "lng": 19.9330,
+    "lat": 50.052,
+    "lng": 19.933,
     "description": "Barka zacumowana przy bulwarach – najlepsze zachody słońca nad Wisłą.",
-    "tags": ["nad Wisłą", "zachody słońca"],
+    "tags": [
+      "nad Wisłą",
+      "zachody słońca"
+    ],
     "emoji": "⛵",
     "isHiddenGem": true,
-    "beer": {"min": 14, "max": 18},
-    "shot": {"min": 10, "max": 13},
-    "drink": {"min": 25, "max": 32},
-    "food": {"min": 30, "max": 42},
+    "beer": {
+      "min": 14,
+      "max": 18
+    },
+    "shot": {
+      "min": 10,
+      "max": 13
+    },
+    "drink": {
+      "min": 25,
+      "max": 32
+    },
+    "food": {
+      "min": 30,
+      "max": 42
+    },
     "kitchenUntil": "22:00",
     "acceptsCards": true,
     "opensAt": "12:00",
     "closesAt": "00:00",
     "publicRating": 4.6,
     "publicRatingCount": 1150,
-    "accessibility": {"stepFree": false, "accessibleToilet": false, "quietArea": false}
+    "accessibility": {
+      "stepFree": false,
+      "accessibleToilet": false,
+      "quietArea": false
+    },
+    "districtNo": 8,
+    "nonAlcoholic": true,
+    "happyHour": {
+      "from": "17:00",
+      "to": "19:00",
+      "label": "Lemoniada gratis do deski na zachód słońca"
+    },
+    "isNew": false
   },
   {
     "id": "b13",
@@ -289,21 +564,48 @@
     "district": "Zabłocie",
     "zoneId": "zablocie",
     "lat": 50.0483,
-    "lng": 19.9610,
+    "lng": 19.961,
     "description": "Industrialna hala z 20 kranami. Barmani z pasją opowiadają o każdym piwie.",
-    "tags": ["piwo rzemieślnicze", "industrialnie"],
+    "tags": [
+      "piwo rzemieślnicze",
+      "industrialnie"
+    ],
     "emoji": "🫧",
     "isHiddenGem": true,
-    "beer": {"min": 13, "max": 19},
-    "shot": {"min": 10, "max": 13},
-    "drink": {"min": 26, "max": 34},
-    "food": {"min": 28, "max": 40},
+    "beer": {
+      "min": 13,
+      "max": 19
+    },
+    "shot": {
+      "min": 10,
+      "max": 13
+    },
+    "drink": {
+      "min": 26,
+      "max": 34
+    },
+    "food": {
+      "min": 28,
+      "max": 40
+    },
     "kitchenUntil": "23:00",
     "acceptsCards": true,
     "opensAt": "16:00",
     "closesAt": "01:00",
     "publicRating": 4.5,
     "publicRatingCount": 860,
-    "accessibility": {"stepFree": true, "accessibleToilet": true, "quietArea": false}
+    "accessibility": {
+      "stepFree": true,
+      "accessibleToilet": true,
+      "quietArea": false
+    },
+    "districtNo": 13,
+    "nonAlcoholic": true,
+    "happyHour": {
+      "from": "16:00",
+      "to": "18:30",
+      "label": "Zestaw degustacyjny −20% (także 0%)"
+    },
+    "isNew": true
   }
 ]

@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:jak_wypije/data/local/local_storage.dart';
 import 'package:jak_wypije/data/models/check_in.dart';
 import 'package:jak_wypije/features/checkin/check_in_controller.dart';
+import 'package:jak_wypije/features/gamification/scoring.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'fixtures.dart';
@@ -20,7 +21,7 @@ void main() {
 
   tearDown(() => container.dispose());
 
-  test('hidden gem outside the crowd gets all bonuses once per evening', () {
+  test('hidden gem outside the crowd: once per evening, persisted', () {
     final notifier = container.read(checkInsProvider.notifier);
     final bar = testBar('gem', extra: {'isHiddenGem': true});
     final at = DateTime(2026, 10, 3, 21);
@@ -34,12 +35,11 @@ void main() {
     expect(first.success, isTrue);
     expect(
       first.points,
-      CheckInsNotifier.basePoints +
-          CheckInsNotifier.firstVisitBonus +
-          CheckInsNotifier.hiddenGemBonus +
-          CheckInsNotifier.offPeakBonus,
+      Scoring.barBase + Scoring.hiddenGemBonus + Scoring.offPeakBonus,
     );
-    expect(container.read(checkInsProvider).single.offPeak, isTrue);
+    final stored = container.read(checkInsProvider).single;
+    expect(stored.offPeak, isTrue);
+    expect(stored.placeId, 'gem');
 
     final again = notifier.checkIn(
       bar,
@@ -49,18 +49,38 @@ void main() {
     expect(again.success, isFalse);
   });
 
-  test('crowded zone gives no off-peak bonus', () {
+  test('third bar of the evening earns no points', () {
+    final notifier = container.read(checkInsProvider.notifier);
+    final at = DateTime(2026, 10, 3, 20);
+    for (final id in ['a', 'b']) {
+      expect(
+        notifier.checkIn(testBar(id), method: CheckInMethod.qr, now: at).points,
+        Scoring.barBase,
+      );
+    }
+    final third = notifier.checkIn(
+      testBar('c'),
+      method: CheckInMethod.qr,
+      now: at.add(const Duration(hours: 2)),
+    );
+    expect(third.success, isTrue);
+    expect(third.points, 0);
+    expect(third.bonuses.single, contains('2 bary na wieczór'));
+  });
+
+  test('landmarks always score and stamp a new district', () {
     final notifier = container.read(checkInsProvider.notifier);
     final result = notifier.checkIn(
-      testBar('busy'),
-      method: CheckInMethod.qr,
-      zone: testZone('busy', crowd: 90),
-      now: DateTime(2026, 10, 3, 22),
+      testLandmark('l1', districtNo: 13),
+      method: CheckInMethod.gps,
+      now: DateTime(2026, 10, 3, 18),
     );
     expect(
       result.points,
-      CheckInsNotifier.basePoints + CheckInsNotifier.firstVisitBonus,
+      Scoring.landmarkBase +
+          Scoring.landmarkFirstVisit +
+          Scoring.newDistrictBonus,
     );
-    expect(container.read(checkInsProvider).single.offPeak, isFalse);
+    expect(container.read(checkInsProvider).single.districtNo, 13);
   });
 }

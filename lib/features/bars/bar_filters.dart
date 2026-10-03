@@ -3,6 +3,7 @@ import 'package:latlong2/latlong.dart';
 import '../../core/utils/geo.dart';
 import '../../data/models/bar.dart';
 import '../../data/models/city_zone.dart';
+import '../../data/models/landmark.dart';
 import '../../data/models/price_range.dart';
 import '../../data/models/review.dart';
 
@@ -17,6 +18,7 @@ class BarListing {
     required this.friendsRatingCount,
     required this.crowd,
     required this.isOpen,
+    this.isHappyHour = false,
   });
 
   final Bar bar;
@@ -29,6 +31,9 @@ class BarListing {
   final int friendsRatingCount;
   final CrowdLevel? crowd;
   final bool isOpen;
+
+  /// The bar's happy hour is running right now.
+  final bool isHappyHour;
 }
 
 /// Booking-style filters. `null` ranges mean "any".
@@ -46,6 +51,9 @@ class BarFilters {
     this.barrierFree = false,
     this.openNow = false,
     this.offPeak = false,
+    this.nonAlcoholic = false,
+    this.happyHourNow = false,
+    this.onlyNew = false,
   });
 
   static const PriceRange beerBounds = PriceRange(min: 5, max: 30);
@@ -66,6 +74,9 @@ class BarFilters {
   final bool barrierFree;
   final bool openNow;
   final bool offPeak;
+  final bool nonAlcoholic;
+  final bool happyHourNow;
+  final bool onlyNew;
 
   /// Number of active filters (search and sort excluded).
   int get activeCount => [
@@ -79,6 +90,9 @@ class BarFilters {
         barrierFree,
         openNow,
         offPeak,
+        nonAlcoholic,
+        happyHourNow,
+        onlyNew,
       ].where((active) => active).length;
 
   static const Object _keep = Object();
@@ -96,6 +110,9 @@ class BarFilters {
     bool? barrierFree,
     bool? openNow,
     bool? offPeak,
+    bool? nonAlcoholic,
+    bool? happyHourNow,
+    bool? onlyNew,
   }) {
     return BarFilters(
       query: query ?? this.query,
@@ -112,6 +129,9 @@ class BarFilters {
       barrierFree: barrierFree ?? this.barrierFree,
       openNow: openNow ?? this.openNow,
       offPeak: offPeak ?? this.offPeak,
+      nonAlcoholic: nonAlcoholic ?? this.nonAlcoholic,
+      happyHourNow: happyHourNow ?? this.happyHourNow,
+      onlyNew: onlyNew ?? this.onlyNew,
     );
   }
 
@@ -144,6 +164,7 @@ List<BarListing> buildListings({
           friendsRatingCount: ratings.length,
           crowd: zones[bar.zoneId]?.levelAt(nowMinutes),
           isOpen: bar.isOpenAt(nowMinutes),
+          isHappyHour: bar.isHappyHourAt(nowMinutes),
         );
       }(),
   ];
@@ -177,7 +198,10 @@ List<BarListing> applyFilters(List<BarListing> listings, BarFilters filters) {
         (!filters.lateKitchen || bar.hasLateKitchen) &&
         (!filters.barrierFree || bar.accessibility.isBarrierFree) &&
         (!filters.openNow || listing.isOpen) &&
-        (!filters.offPeak || listing.crowd == CrowdLevel.low);
+        (!filters.offPeak || listing.crowd == CrowdLevel.low) &&
+        (!filters.nonAlcoholic || bar.nonAlcoholic) &&
+        (!filters.happyHourNow || listing.isHappyHour) &&
+        (!filters.onlyNew || bar.isNew);
   }).toList();
 }
 
@@ -205,4 +229,49 @@ List<BarListing> sortListings(List<BarListing> listings, BarSort sort) {
       });
   }
   return sorted;
+}
+
+/// A landmark with distance from the reference point.
+class LandmarkListing {
+  const LandmarkListing({
+    required this.landmark,
+    required this.distanceMeters,
+    required this.isOpen,
+  });
+
+  final Landmark landmark;
+  final double distanceMeters;
+  final bool isOpen;
+}
+
+/// Landmarks sorted by distance from [reference].
+List<LandmarkListing> buildLandmarkListings({
+  required List<Landmark> landmarks,
+  required LatLng reference,
+  required int nowMinutes,
+}) {
+  return [
+    for (final landmark in landmarks)
+      LandmarkListing(
+        landmark: landmark,
+        distanceMeters: haversineMeters(reference, landmark.location),
+        isOpen: landmark.isOpenAt(nowMinutes),
+      ),
+  ]..sort((a, b) => a.distanceMeters.compareTo(b.distanceMeters));
+}
+
+/// Category (`null` = all) and text search for landmarks.
+List<LandmarkListing> filterLandmarks(
+  List<LandmarkListing> listings, {
+  LandmarkCategory? category,
+  String query = '',
+}) {
+  final q = query.trim().toLowerCase();
+  return listings.where((listing) {
+    final landmark = listing.landmark;
+    if (category != null && landmark.category != category) return false;
+    if (q.isEmpty) return true;
+    return landmark.name.toLowerCase().contains(q) ||
+        landmark.district.toLowerCase().contains(q);
+  }).toList();
 }

@@ -15,6 +15,7 @@ import '../profile/profile_providers.dart';
 import 'leagues.dart';
 import 'reviews_controller.dart';
 import 'trophies.dart';
+import '../gamification/challenges_card.dart';
 
 class FriendsScreen extends ConsumerWidget {
   const FriendsScreen({super.key});
@@ -41,6 +42,8 @@ class FriendsScreen extends ConsumerWidget {
         children: [
           const _LeagueHeader(),
           _StreakBanner(weeks: streak),
+          const SectionHeader(title: 'Wyzwania tygodnia'),
+          const WeeklyChallengesCard(),
           const SectionHeader(title: 'Tabela tygodnia'),
           _LeagueTableCard(table: table),
           SectionHeader(

@@ -78,6 +78,80 @@ class BarMarker extends StatelessWidget {
   }
 }
 
+/// Landmark pin: rounded square, so it reads differently from bars.
+class LandmarkMarker extends StatelessWidget {
+  const LandmarkMarker({
+    super.key,
+    required this.emoji,
+    required this.onTap,
+    this.planIndex,
+    this.selected = false,
+  });
+
+  final String emoji;
+  final VoidCallback onTap;
+  final int? planIndex;
+  final bool selected;
+
+  @override
+  Widget build(BuildContext context) {
+    final index = planIndex;
+    final inRoute = index != null;
+    return GestureDetector(
+      onTap: onTap,
+      child: Stack(
+        fit: StackFit.expand,
+        clipBehavior: Clip.none,
+        children: [
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: inRoute ? AppColors.green : Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: selected ? AppColors.amber : AppColors.green,
+                width: selected ? 3 : 2.5,
+              ),
+              boxShadow: const [
+                BoxShadow(
+                  color: Colors.black45,
+                  blurRadius: 6,
+                  offset: Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Text(emoji, style: const TextStyle(fontSize: 20)),
+          ),
+          if (index != null)
+            Positioned(
+              top: -6,
+              right: -6,
+              child: Container(
+                width: 20,
+                height: 20,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: AppColors.amber, width: 2),
+                ),
+                child: Text(
+                  '${index + 1}',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
 /// Public transport stop with night service.
 class TransitStopMarker extends StatelessWidget {
   const TransitStopMarker({super.key, this.onTap});

@@ -10,18 +10,26 @@ import '../../core/utils/geo.dart';
 import '../../data/models/bar.dart';
 import '../../data/models/city_zone.dart';
 import '../../data/models/evening_plan.dart';
+import '../../data/models/landmark.dart';
+import '../../data/models/place.dart';
 import '../../data/models/transit_stop.dart';
-import '../../data/repositories/bar_repository.dart';
 import '../../data/repositories/city_repository.dart';
+import '../../data/repositories/place_repository.dart';
 import '../../widgets/async_value_view.dart';
 import '../../widgets/empty_state.dart';
+import '../../widgets/section_header.dart';
 import '../bars/bars_providers.dart';
 import '../map/widgets/bar_marker.dart';
+import '../trips/trips_widgets.dart';
 import 'plan_calculator.dart';
 import 'planner_controller.dart';
+import 'route_export.dart';
 import 'safe_return.dart';
 
-/// "Barobranie": build the evening route on the map.
+String placeRoute(Place place) =>
+    place is Landmark ? '/landmark/${place.id}' : '/bar/${place.id}';
+
+/// "Barobranie": build a walking route of landmarks and bars on the map.
 class BarobranieScreen extends ConsumerStatefulWidget {
   const BarobranieScreen({super.key});
 
@@ -57,30 +65,31 @@ class _BarobranieScreenState extends ConsumerState<BarobranieScreen> {
     );
   }
 
-  void _addBars() {
+  void _addPlaces({required bool landmarks}) {
     ref
         .read(distanceReferenceProvider.notifier)
         .set(DistanceReference.lastStop);
+    ref.read(showLandmarksProvider.notifier).set(landmarks);
     context.go('/bars');
   }
 
   @override
   Widget build(BuildContext context) {
-    final barsAsync = ref.watch(barsProvider);
     return Scaffold(
-      body: AsyncValueView<List<Bar>>(
-        value: barsAsync,
+      body: AsyncValueView<List<Place>>(
+        value: ref.watch(placesProvider),
         data: _buildBody,
       ),
     );
   }
 
-  Widget _buildBody(List<Bar> bars) {
+  Widget _buildBody(List<Place> places) {
     final plan = ref.watch(plannerProvider);
     final zones = ref.watch(zonesByIdProvider);
     final transit =
         ref.watch(transitStopsProvider).valueOrNull ?? const <TransitStop>[];
-    final stops = resolveStops(plan, bars);
+    final placesById = {for (final place in places) place.id: place};
+    final stops = resolveStops(plan, placesById);
     final summary = calculatePlan(plan, stops, zones: zones);
     final safeReturn = stops.isEmpty
         ? null
@@ -89,7 +98,7 @@ class _BarobranieScreenState extends ConsumerState<BarobranieScreen> {
             leaveAt: summary.endMinutes,
             stops: transit,
           );
-    final routePoints = [for (final bar in stops) bar.location];
+    final routePoints = [for (final place in stops) place.location];
 
     return Stack(
       children: [
@@ -137,12 +146,18 @@ class _BarobranieScreenState extends ConsumerState<BarobranieScreen> {
                     point: stops[i].location,
                     width: 46,
                     height: 46,
-                    child: BarMarker(
-                      emoji: stops[i].emoji,
-                      color: AppColors.green,
-                      planIndex: i,
-                      onTap: () => context.push('/bar/${stops[i].id}'),
-                    ),
+                    child: stops[i] is Landmark
+                        ? LandmarkMarker(
+                            emoji: stops[i].emoji,
+                            planIndex: i,
+                            onTap: () => context.push(placeRoute(stops[i])),
+                          )
+                        : BarMarker(
+                            emoji: stops[i].emoji,
+                            color: AppColors.amber,
+                            planIndex: i,
+                            onTap: () => context.push(placeRoute(stops[i])),
+                          ),
                   ),
                 if (safeReturn != null)
                   Marker(
@@ -191,17 +206,18 @@ class _BarobranieScreenState extends ConsumerState<BarobranieScreen> {
           ),
         ),
         DraggableScrollableSheet(
-          initialChildSize: stops.isEmpty ? 0.42 : 0.5,
+          initialChildSize: stops.isEmpty ? 0.55 : 0.5,
           minChildSize: 0.16,
           maxChildSize: 0.92,
           builder: (context, scrollController) => _RouteSheet(
             controller: scrollController,
-            bars: bars,
+            bars: places.whereType<Bar>().toList(),
             plan: plan,
             summary: summary,
             zones: zones,
             safeReturn: safeReturn,
-            onAddBars: _addBars,
+            onAddBars: () => _addPlaces(landmarks: false),
+            onAddLandmarks: () => _addPlaces(landmarks: true),
           ),
         ),
       ],
@@ -218,6 +234,7 @@ class _RouteSheet extends ConsumerWidget {
     required this.zones,
     required this.safeReturn,
     required this.onAddBars,
+    required this.onAddLandmarks,
   });
 
   final ScrollController controller;
@@ -227,6 +244,7 @@ class _RouteSheet extends ConsumerWidget {
   final Map<String, CityZone> zones;
   final SafeReturnOption? safeReturn;
   final VoidCallback onAddBars;
+  final VoidCallback onAddLandmarks;
 
   Future<void> _confirmClear(BuildContext context, WidgetRef ref) async {
     final confirmed = await showDialog<bool>(
@@ -256,8 +274,30 @@ class _RouteSheet extends ConsumerWidget {
     final theme = Theme.of(context);
     final notifier = ref.read(plannerProvider.notifier);
     final stops = summary.stops;
-    final plannedIds = plan.barIds.toSet();
+    final plannedIds = plan.stopIds.toSet();
     final option = safeReturn;
+    final addButtons = Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      child: Row(
+        children: [
+          Expanded(
+            child: OutlinedButton.icon(
+              onPressed: onAddLandmarks,
+              icon: const Icon(Icons.account_balance_outlined),
+              label: const Text('+ Atrakcja'),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: OutlinedButton.icon(
+              onPressed: onAddBars,
+              icon: const Icon(Icons.local_bar_outlined),
+              label: const Text('+ Bar'),
+            ),
+          ),
+        ],
+      ),
+    );
 
     return Material(
       color: theme.colorScheme.surfaceContainerLow,
@@ -288,7 +328,7 @@ class _RouteSheet extends ConsumerWidget {
                           stops.isEmpty
                               ? 'Twoja trasa'
                               : 'Twoja trasa · ${stops.length} '
-                                  '${pluralize(stops.length, 'bar', 'bary', 'barów')}',
+                                  '${pluralize(stops.length, 'przystanek', 'przystanki', 'przystanków')}',
                           style: theme.textTheme.titleLarge,
                         ),
                       ),
@@ -297,11 +337,12 @@ class _RouteSheet extends ConsumerWidget {
                           tooltip: 'Optymalizuj trasę',
                           icon: const Icon(Icons.auto_fix_high),
                           onPressed: () {
-                            notifier.optimize([for (final s in stops) s.bar]);
+                            notifier.optimize([for (final s in stops) s.place]);
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
                                 content: Text(
-                                  'Ułożono najkrótszą trasę od pierwszego baru.',
+                                  'Ułożono najkrótszą trasę od pierwszego '
+                                  'przystanku.',
                                 ),
                               ),
                             );
@@ -319,23 +360,29 @@ class _RouteSheet extends ConsumerWidget {
               ],
             ),
           ),
-          if (stops.isEmpty)
-            SliverToBoxAdapter(
+          if (stops.isEmpty) ...[
+            const SliverToBoxAdapter(
               child: EmptyState(
                 icon: Icons.route,
                 title: 'Zbuduj swoje Barobranie',
-                message: 'Wybierz bary – ułożymy trasę, policzymy spacer, '
-                    'budżet i podpowiemy, jak bezpiecznie wrócić.',
-                action: FilledButton.icon(
-                  onPressed: onAddBars,
-                  icon: const Icon(Icons.add),
-                  label: const Text('Wybierz bary'),
-                ),
+                message: 'Połącz atrakcje miasta z barami – policzymy spacer, '
+                    'budżet i bezpieczny powrót. Albo wybierz gotową trasę.',
               ),
-            )
-          else ...[
+            ),
+            SliverToBoxAdapter(child: addButtons),
+            const SliverToBoxAdapter(
+              child: SectionHeader(title: 'Gotowe trasy'),
+            ),
+            const SliverToBoxAdapter(child: TripsCarousel()),
+          ] else ...[
             SliverToBoxAdapter(
               child: _SummaryCard(plan: plan, summary: summary),
+            ),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                child: RouteExportButtons(summary: summary, ride: option),
+              ),
             ),
             SliverReorderableList(
               itemCount: stops.length,
@@ -351,7 +398,7 @@ class _RouteSheet extends ConsumerWidget {
                     stop.warnings.any((w) => w.type == PlanWarningType.crowded);
                 final alternative = crowded
                     ? calmerAlternative(
-                        stop.bar,
+                        stop.place,
                         bars,
                         zones,
                         atMinutes: stop.arrivalMinutes,
@@ -359,31 +406,19 @@ class _RouteSheet extends ConsumerWidget {
                       )
                     : null;
                 return _StopTile(
-                  key: ValueKey(stop.bar.id),
+                  key: ValueKey(stop.place.id),
                   index: index,
                   stop: stop,
                   drinksPerStop: plan.drinksPerStop,
                   alternative: alternative,
-                  onRemove: () => notifier.remove(stop.bar.id),
+                  onRemove: () => notifier.remove(stop.place.id),
                   onReplace: alternative == null
                       ? null
-                      : () => notifier.replace(stop.bar.id, alternative.id),
+                      : () => notifier.replace(stop.place.id, alternative.id),
                 );
               },
             ),
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                child: OutlinedButton.icon(
-                  onPressed: onAddBars,
-                  icon: const Icon(Icons.add),
-                  label: Text(
-                    'Dodaj bar (odległość od: ${stops.last.bar.name})',
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ),
-            ),
+            SliverToBoxAdapter(child: addButtons),
             if (option != null)
               SliverToBoxAdapter(
                 child: SafeReturnCard(
@@ -430,6 +465,7 @@ class _SummaryCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final notifier = ref.read(plannerProvider.notifier);
+    final hasBars = summary.stops.any((s) => s.place is Bar);
 
     return Card(
       margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
@@ -469,47 +505,53 @@ class _SummaryCard extends ConsumerWidget {
                 ),
               ],
             ),
-            const Divider(height: 24),
-            Row(
-              children: [
-                const Expanded(child: Text('Piwa w każdym barze')),
-                IconButton(
-                  onPressed: plan.drinksPerStop > 1
-                      ? () => notifier.setDrinksPerStop(plan.drinksPerStop - 1)
-                      : null,
-                  icon: const Icon(Icons.remove_circle_outline),
-                  tooltip: 'Mniej',
-                ),
-                Text(
-                  '${plan.drinksPerStop}',
-                  style: theme.textTheme.titleMedium,
-                ),
-                IconButton(
-                  onPressed: plan.drinksPerStop <
-                          PlannerNotifier.maxDrinksPerStop
-                      ? () => notifier.setDrinksPerStop(plan.drinksPerStop + 1)
-                      : null,
-                  icon: const Icon(Icons.add_circle_outline),
-                  tooltip: 'Więcej',
-                ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            SegmentedButton<int>(
-              showSelectedIcon: false,
-              segments: const [
-                ButtonSegment(value: 45, label: Text('45 min')),
-                ButtonSegment(value: 60, label: Text('1 h')),
-                ButtonSegment(value: 90, label: Text('1,5 h')),
-              ],
-              selected: {plan.minutesPerStop},
-              onSelectionChanged: (selection) =>
-                  notifier.setMinutesPerStop(selection.first),
-            ),
+            if (hasBars) ...[
+              const Divider(height: 24),
+              Row(
+                children: [
+                  const Expanded(child: Text('Napoje w barze (do budżetu)')),
+                  IconButton(
+                    onPressed: plan.drinksPerStop > 1
+                        ? () =>
+                            notifier.setDrinksPerStop(plan.drinksPerStop - 1)
+                        : null,
+                    icon: const Icon(Icons.remove_circle_outline),
+                    tooltip: 'Mniej',
+                  ),
+                  Text(
+                    '${plan.drinksPerStop}',
+                    style: theme.textTheme.titleMedium,
+                  ),
+                  IconButton(
+                    onPressed: plan.drinksPerStop <
+                            PlannerNotifier.maxDrinksPerStop
+                        ? () =>
+                            notifier.setDrinksPerStop(plan.drinksPerStop + 1)
+                        : null,
+                    icon: const Icon(Icons.add_circle_outline),
+                    tooltip: 'Więcej',
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              SegmentedButton<int>(
+                showSelectedIcon: false,
+                segments: const [
+                  ButtonSegment(value: 45, label: Text('45 min')),
+                  ButtonSegment(value: 60, label: Text('1 h')),
+                  ButtonSegment(value: 90, label: Text('1,5 h')),
+                ],
+                selected: {plan.minutesPerStop},
+                onSelectionChanged: (selection) =>
+                    notifier.setMinutesPerStop(selection.first),
+              ),
+            ],
             const SizedBox(height: 8),
             Text(
-              'Czas w każdym barze · ${formatDuration(summary.totalWalkMinutes)} '
-              'spaceru między barami',
+              '${hasBars ? 'Czas w każdym barze · ' : ''}'
+              '${formatDuration(summary.totalWalkMinutes)} spaceru · '
+              '${summary.landmarkCount} '
+              '${pluralize(summary.landmarkCount, 'atrakcja', 'atrakcje', 'atrakcji')}',
               style: theme.textTheme.bodySmall,
             ),
           ],
@@ -591,10 +633,14 @@ class _StopTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final place = stop.place;
     final walkInfo = index == 0
         ? 'Start trasy'
         : '🚶 ${formatDuration(stop.walkMinutes)} · '
             '${formatDistance(stop.walkMeters)}';
+    final details = place is Landmark
+        ? '${place.category.label} · bilet: ${place.ticketLabel}'
+        : '$drinksPerStop× piwo ${stop.cost.label}';
     final replacement = alternative;
     final replace = onReplace;
 
@@ -607,8 +653,10 @@ class _StopTile extends StatelessWidget {
             leading: ReorderableDragStartListener(
               index: index,
               child: CircleAvatar(
-                backgroundColor: AppColors.green,
-                foregroundColor: Colors.white,
+                backgroundColor:
+                    place is Landmark ? AppColors.green : AppColors.amber,
+                foregroundColor:
+                    place is Landmark ? Colors.white : AppColors.brown,
                 child: Text(
                   '${index + 1}',
                   style: const TextStyle(fontWeight: FontWeight.w900),
@@ -616,14 +664,13 @@ class _StopTile extends StatelessWidget {
               ),
             ),
             title: Text(
-              '${stop.bar.emoji} ${stop.bar.name}',
+              '${place.emoji} ${place.name}',
               style: const TextStyle(fontWeight: FontWeight.w800),
             ),
             subtitle: Text(
               '$walkInfo\n'
               '${formatClock(stop.arrivalMinutes)}–'
-              '${formatClock(stop.departureMinutes)} · '
-              '$drinksPerStop× piwo ${stop.cost.label}',
+              '${formatClock(stop.departureMinutes)} · $details',
             ),
             isThreeLine: true,
             trailing: IconButton(
@@ -631,7 +678,7 @@ class _StopTile extends StatelessWidget {
               icon: const Icon(Icons.close),
               tooltip: 'Usuń z trasy',
             ),
-            onTap: () => context.push('/bar/${stop.bar.id}'),
+            onTap: () => context.push(placeRoute(place)),
           ),
           for (final warning in stop.warnings)
             Padding(

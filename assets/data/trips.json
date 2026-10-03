@@ -1,0 +1,47 @@
+[
+  {
+    "id": "trip_kazimierz",
+    "title": "Kazimierz: historia i kraft",
+    "subtitle": "Synagoga, murale, kładka nad Wisłą i dwa kameralne bary",
+    "emoji": "🕍",
+    "audience": "tourist",
+    "startTime": "16:00",
+    "stopIds": ["l04", "l05", "l10", "b01", "l06", "b06"]
+  },
+  {
+    "id": "trip_old_town",
+    "title": "Klasyka Starego Miasta",
+    "subtitle": "Planty, Sukiennice, hejnał z Mariackiego i jazzowa piwnica",
+    "emoji": "⛪",
+    "audience": "tourist",
+    "startTime": "17:00",
+    "stopIds": ["l01", "l15", "l03", "b03"]
+  },
+  {
+    "id": "trip_sunset",
+    "title": "Bulwary o zachodzie",
+    "subtitle": "Wawel, spacer nad Wisłą, barka i nalewki w Dębnikach",
+    "emoji": "🌅",
+    "audience": "both",
+    "startTime": "17:30",
+    "stopIds": ["l02", "l09", "b12", "b07"]
+  },
+  {
+    "id": "trip_podgorze",
+    "title": "Podgórze poza tłokiem",
+    "subtitle": "Kładka, panorama z Kopca Krakusa i bary bez tłumów",
+    "emoji": "🌿",
+    "audience": "local",
+    "startTime": "17:00",
+    "stopIds": ["l06", "l08", "b06", "b13"]
+  },
+  {
+    "id": "trip_nowa_huta",
+    "title": "Nowa Huta po zmroku",
+    "subtitle": "Socrealizm, zalew i bufet, w którym czas stanął w 1985",
+    "emoji": "🏭",
+    "audience": "local",
+    "startTime": "17:30",
+    "stopIds": ["l16", "l11", "l12", "b11"]
+  }
+]

@@ -1,0 +1,9 @@
+[
+  {"id": "e1", "title": "Wieczór planszówek", "emoji": "🎲", "weekday": 1, "start": "18:00", "end": "22:00", "placeId": "b02", "description": "Półka gier i koty w roli sędziów. Wstęp wolny."},
+  {"id": "e2", "title": "Quiz drużynowy", "emoji": "🧠", "weekday": 2, "start": "19:30", "end": "22:00", "placeId": "b09", "description": "Drużyny do 6 osób, zapisy na miejscu."},
+  {"id": "e3", "title": "Degustacja browarów rzemieślniczych", "emoji": "🧪", "weekday": 3, "start": "18:00", "end": "21:00", "placeId": "b13", "description": "Piwowar opowiada o 5 piwach – w zestawie także wersje 0%."},
+  {"id": "e4", "title": "Jam session", "emoji": "🎷", "weekday": 4, "start": "20:00", "end": "23:00", "placeId": "b03", "description": "Przynieś instrument albo po prostu słuchaj."},
+  {"id": "e5", "title": "Kino na bulwarach", "emoji": "🎬", "weekday": 5, "start": "20:30", "end": "22:30", "placeId": "l09", "description": "Plenerowy seans nad Wisłą (w sezonie, przy dobrej pogodzie)."},
+  {"id": "e6", "title": "Targ staroci", "emoji": "🧺", "weekday": 6, "start": "09:00", "end": "14:00", "placeId": "l05", "description": "Winyle, aparaty i porcelana z PRL-u."},
+  {"id": "e7", "title": "Spacer z przewodnikiem po Nowej Hucie", "emoji": "🚶", "weekday": 7, "start": "16:00", "end": "18:00", "placeId": "l11", "description": "Historia idealnego miasta socjalizmu w 2 godziny."}
+]

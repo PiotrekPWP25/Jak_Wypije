@@ -63,7 +63,11 @@ abstract final class AppTheme {
       colorScheme: scheme,
       scaffoldBackgroundColor: scheme.surface,
     );
-    final text = GoogleFonts.nunitoTextTheme(base.textTheme).apply(
+    // `base.textTheme` has no font sizes yet (Flutter adds them when the theme
+    // is localized), so merge the M3 geometry in – otherwise styles copied
+    // into component themes (app bar title, nav labels) lose their size.
+    final sized = Typography.material2021().englishLike.merge(base.textTheme);
+    final text = GoogleFonts.nunitoTextTheme(sized).apply(
       bodyColor: scheme.onSurface,
       displayColor: scheme.onSurface,
     );
@@ -89,7 +93,7 @@ abstract final class AppTheme {
         foregroundColor: scheme.onSurface,
         surfaceTintColor: Colors.transparent,
         centerTitle: false,
-        titleTextStyle: text.headlineSmall?.copyWith(
+        titleTextStyle: text.titleLarge?.copyWith(
           fontWeight: FontWeight.w900,
           color: scheme.onSurface,
         ),

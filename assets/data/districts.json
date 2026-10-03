@@ -1,0 +1,20 @@
+[
+  {"no": 1, "name": "Stare Miasto", "lat": 50.0614, "lng": 19.9366},
+  {"no": 2, "name": "Grzegórzki", "lat": 50.0593, "lng": 19.9590},
+  {"no": 3, "name": "Prądnik Czerwony", "lat": 50.0905, "lng": 19.9690},
+  {"no": 4, "name": "Prądnik Biały", "lat": 50.0950, "lng": 19.9250},
+  {"no": 5, "name": "Krowodrza", "lat": 50.0740, "lng": 19.9180},
+  {"no": 6, "name": "Bronowice", "lat": 50.0810, "lng": 19.8890},
+  {"no": 7, "name": "Zwierzyniec", "lat": 50.0560, "lng": 19.8800},
+  {"no": 8, "name": "Dębniki", "lat": 50.0360, "lng": 19.9050},
+  {"no": 9, "name": "Łagiewniki-Borek Fałęcki", "lat": 50.0230, "lng": 19.9300},
+  {"no": 10, "name": "Swoszowice", "lat": 49.9950, "lng": 19.9450},
+  {"no": 11, "name": "Podgórze Duchackie", "lat": 50.0150, "lng": 19.9650},
+  {"no": 12, "name": "Bieżanów-Prokocim", "lat": 50.0200, "lng": 20.0100},
+  {"no": 13, "name": "Podgórze", "lat": 50.0430, "lng": 19.9650},
+  {"no": 14, "name": "Czyżyny", "lat": 50.0750, "lng": 19.9950},
+  {"no": 15, "name": "Mistrzejowice", "lat": 50.0960, "lng": 20.0080},
+  {"no": 16, "name": "Bieńczyce", "lat": 50.0850, "lng": 20.0200},
+  {"no": 17, "name": "Wzgórza Krzesławickie", "lat": 50.0950, "lng": 20.0700},
+  {"no": 18, "name": "Nowa Huta", "lat": 50.0700, "lng": 20.0700}
+]

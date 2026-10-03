@@ -3,6 +3,8 @@ import '../../core/utils/geo.dart';
 import '../../data/models/bar.dart';
 import '../../data/models/city_zone.dart';
 import '../../data/models/evening_plan.dart';
+import '../../data/models/landmark.dart';
+import '../../data/models/place.dart';
 import '../../data/models/price_range.dart';
 
 enum PlanWarningType { closed, closesEarly, crowded, quietZone }
@@ -16,7 +18,7 @@ class PlanWarning {
 
 class PlanStop {
   const PlanStop({
-    required this.bar,
+    required this.place,
     required this.walkMeters,
     required this.walkMinutes,
     required this.arrivalMinutes,
@@ -25,7 +27,7 @@ class PlanStop {
     this.warnings = const [],
   });
 
-  final Bar bar;
+  final Place place;
 
   /// Walk from the previous stop (0 for the first one).
   final double walkMeters;
@@ -33,7 +35,7 @@ class PlanStop {
   final int arrivalMinutes;
   final int departureMinutes;
 
-  /// Drinks at this stop as a price range.
+  /// Drinks in a bar or the ticket of a landmark.
   final PriceRange cost;
   final List<PlanWarning> warnings;
 }
@@ -55,19 +57,19 @@ class PlanSummary {
 
   int get warningCount =>
       stops.fold(0, (sum, stop) => sum + stop.warnings.length);
+
+  int get landmarkCount => stops.where((s) => s.place is Landmark).length;
 }
 
-/// Bars from [plan] in plan order, skipping unknown ids.
-List<Bar> resolveStops(EveningPlan plan, List<Bar> bars) {
-  final byId = {for (final bar in bars) bar.id: bar};
-  return plan.barIds.map((id) => byId[id]).nonNulls.toList();
-}
+/// Places from [plan] in plan order, skipping unknown ids.
+List<Place> resolveStops(EveningPlan plan, Map<String, Place> placesById) =>
+    plan.stopIds.map((id) => placesById[id]).nonNulls.toList();
 
-/// Builds the evening timeline: walking legs, arrival times, budget range
-/// and city-aware warnings (opening hours, crowds, quiet hours).
+/// Builds the route timeline: walking legs, arrival times, budget range and
+/// city-aware warnings (opening hours, crowds, quiet hours).
 PlanSummary calculatePlan(
   EveningPlan plan,
-  List<Bar> bars, {
+  List<Place> places, {
   Map<String, CityZone> zones = const {},
 }) {
   final stops = <PlanStop>[];
@@ -76,34 +78,43 @@ PlanSummary calculatePlan(
   var totalWalk = 0;
   var totalCost = PriceRange.zero;
 
-  for (var i = 0; i < bars.length; i++) {
-    final bar = bars[i];
+  for (var i = 0; i < places.length; i++) {
+    final place = places[i];
     final meters =
-        i == 0 ? 0.0 : haversineMeters(bars[i - 1].location, bar.location);
+        i == 0 ? 0.0 : haversineMeters(places[i - 1].location, place.location);
     final walk = walkingMinutes(meters);
     clock += walk;
     final arrival = clock;
-    clock += plan.minutesPerStop;
-    final cost = bar.beer * plan.drinksPerStop;
-    final isLast = i == bars.length - 1;
+    final PriceRange cost;
+    switch (place) {
+      case Landmark():
+        clock += place.visitMinutes;
+        cost = place.ticket ?? PriceRange.zero;
+      case Bar():
+        clock += plan.minutesPerStop;
+        cost = place.beer * plan.drinksPerStop;
+      default:
+        clock += plan.minutesPerStop;
+        cost = PriceRange.zero;
+    }
 
     totalMeters += meters;
     totalWalk += walk;
     totalCost = totalCost + cost;
     stops.add(
       PlanStop(
-        bar: bar,
+        place: place,
         walkMeters: meters,
         walkMinutes: walk,
         arrivalMinutes: arrival,
         departureMinutes: clock,
         cost: cost,
         warnings: _warningsFor(
-          bar,
+          place,
           arrival: arrival,
           departure: clock,
-          zone: zones[bar.zoneId],
-          isLast: isLast,
+          zone: zones[place.zoneId],
+          isLast: i == places.length - 1,
         ),
       ),
     );
@@ -118,32 +129,47 @@ PlanSummary calculatePlan(
   );
 }
 
+int? _closesAt(Place place) => switch (place) {
+      Bar() => place.closesAt,
+      Landmark() => place.closesAt,
+      _ => null,
+    };
+
+String _hours(Place place) => switch (place) {
+      Bar() => place.openHours,
+      Landmark() => place.openHours,
+      _ => '',
+    };
+
 List<PlanWarning> _warningsFor(
-  Bar bar, {
+  Place place, {
   required int arrival,
   required int departure,
   required CityZone? zone,
   required bool isLast,
 }) {
   final warnings = <PlanWarning>[];
-  if (!bar.isOpenAt(arrival)) {
+  final closesAt = _closesAt(place);
+  if (!place.isOpenAt(arrival)) {
     warnings.add(
       PlanWarning(
         type: PlanWarningType.closed,
         message: 'O ${formatClock(arrival)} będzie zamknięte '
-            '(${bar.openHours}).',
+            '(${_hours(place)}).',
       ),
     );
-  } else if (departure > bar.closesAt) {
+  } else if (closesAt != null && departure > closesAt) {
     warnings.add(
       PlanWarning(
         type: PlanWarningType.closesEarly,
-        message: 'Zamykają o ${formatClock(bar.closesAt)} – '
+        message: 'Zamykają o ${formatClock(closesAt)} – '
             'skróć postój albo zamień kolejność.',
       ),
     );
   }
-  if (zone != null && zone.levelAt(arrival) == CrowdLevel.high) {
+  if (place is Bar &&
+      zone != null &&
+      zone.levelAt(arrival) == CrowdLevel.high) {
     warnings.add(
       PlanWarning(
         type: PlanWarningType.crowded,
@@ -168,10 +194,10 @@ List<PlanWarning> _warningsFor(
 }
 
 /// Greedy nearest-neighbour route that keeps the first stop in place.
-List<String> optimizeRoute(List<Bar> bars) {
-  if (bars.length < 3) return [for (final bar in bars) bar.id];
-  final remaining = [...bars.skip(1)];
-  final route = [bars.first];
+List<String> optimizeRoute(List<Place> places) {
+  if (places.length < 3) return [for (final place in places) place.id];
+  final remaining = [...places.skip(1)];
+  final route = [places.first];
   while (remaining.isNotEmpty) {
     final last = route.last.location;
     remaining.sort(
@@ -180,13 +206,13 @@ List<String> optimizeRoute(List<Bar> bars) {
     );
     route.add(remaining.removeAt(0));
   }
-  return [for (final bar in route) bar.id];
+  return [for (final place in route) place.id];
 }
 
-/// Calmer alternative for a crowded stop: nearest hidden gem in a low-crowd
+/// Calmer alternative for a crowded bar: nearest hidden gem in a low-crowd
 /// zone that is not already planned.
 Bar? calmerAlternative(
-  Bar crowded,
+  Place crowded,
   List<Bar> bars,
   Map<String, CityZone> zones, {
   required int atMinutes,

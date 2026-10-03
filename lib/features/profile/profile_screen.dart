@@ -5,12 +5,12 @@ import 'package:go_router/go_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/theme_controller.dart';
 import '../../core/utils/formatters.dart';
-import '../../data/models/bar.dart';
-import '../../data/repositories/bar_repository.dart';
+import '../../data/repositories/place_repository.dart';
 import '../../widgets/empty_state.dart';
 import '../../widgets/section_header.dart';
 import '../checkin/check_in_controller.dart';
 import '../friends/trophies.dart';
+import '../onboarding/user_mode.dart';
 import 'profile_providers.dart';
 
 class ProfileScreen extends ConsumerWidget {
@@ -37,8 +37,8 @@ class ProfileScreen extends ConsumerWidget {
     final trophies = ref.watch(trophiesProvider);
     final checkIns = ref.watch(checkInsProvider);
     final themeMode = ref.watch(themeModeProvider);
-    final bars = ref.watch(barsProvider).valueOrNull ?? const <Bar>[];
-    final barsById = {for (final bar in bars) bar.id: bar};
+    final placesById = ref.watch(placesByIdProvider);
+    final mode = ref.watch(userModeProvider) ?? UserMode.tourist;
     int countTier(TrophyTier tier) =>
         trophies.where((trophy) => trophy.tier == tier).length;
 
@@ -75,6 +75,36 @@ class ProfileScreen extends ConsumerWidget {
               selected: {themeMode},
               onSelectionChanged: (selection) =>
                   ref.read(themeModeProvider.notifier).set(selection.first),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: SegmentedButton<UserMode>(
+              segments: const [
+                ButtonSegment(
+                  value: UserMode.tourist,
+                  icon: Icon(Icons.luggage_outlined),
+                  label: Text('Turysta'),
+                ),
+                ButtonSegment(
+                  value: UserMode.local,
+                  icon: Icon(Icons.home_outlined),
+                  label: Text('Mieszkaniec'),
+                ),
+              ],
+              selected: {mode},
+              onSelectionChanged: (selection) =>
+                  ref.read(userModeProvider.notifier).set(selection.first),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: OutlinedButton.icon(
+              onPressed: () => context.push('/passport'),
+              icon: const Icon(Icons.menu_book_outlined),
+              label: Text('Paszport Krakowa · ${stats.districts}/18 dzielnic'),
             ),
           ),
           const SizedBox(height: 16),
@@ -114,19 +144,23 @@ class ProfileScreen extends ConsumerWidget {
             const EmptyState(
               icon: Icons.qr_code_2,
               title: 'Brak meldunków',
-              message: 'Zeskanuj kod QR w barze, żeby zdobyć pierwsze punkty.',
+              message: 'Zamelduj się przy atrakcji albo w barze, żeby zdobyć '
+                  'pierwsze punkty.',
             )
           else
             for (final checkIn in checkIns.take(30))
               ListTile(
                 leading: Text(
-                  barsById[checkIn.barId]?.emoji ?? '🍺',
+                  placesById[checkIn.placeId]?.emoji ?? '📍',
                   style: const TextStyle(fontSize: 24),
                 ),
-                title: Text(barsById[checkIn.barId]?.name ?? 'Nieznany bar'),
+                title: Text(
+                  placesById[checkIn.placeId]?.name ?? 'Nieznane miejsce',
+                ),
                 subtitle: Text(
                   '${formatDate(checkIn.timestamp)}'
-                  '${checkIn.offPeak ? ' · 🌿 poza tłokiem' : ''}',
+                  '${checkIn.offPeak ? ' · 🌿 poza tłokiem' : ''}'
+                  '${checkIn.completedRoute ? ' · 🏁 trasa' : ''}',
                 ),
                 trailing: Text(
                   '+${checkIn.points} pkt',
@@ -212,12 +246,12 @@ class _StatsGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final items = <(String, String, IconData)>[
-      ('Meldunki', '${stats.checkIns}', Icons.qr_code_scanner),
-      ('Bary', '${stats.uniqueBars}', Icons.sports_bar),
-      ('Dzielnice', '${stats.districts}', Icons.location_city),
-      ('Perełki', '${stats.hiddenGems}', Icons.diamond_outlined),
+      ('Miejsca', '${stats.uniquePlaces}', Icons.place_outlined),
+      ('Dzielnice', '${stats.districts}/18', Icons.menu_book_outlined),
+      ('Atrakcje', '${stats.landmarks}', Icons.account_balance_outlined),
+      ('Km pieszo', '${stats.walkedKm}', Icons.directions_walk),
       ('Poza tłokiem', '${stats.offPeakCheckIns}', Icons.eco_outlined),
-      ('Powroty', '${stats.safeReturns}', Icons.directions_bus),
+      ('Trasy', '${stats.routesCompleted}', Icons.flag_outlined),
     ];
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),

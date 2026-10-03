@@ -2,6 +2,7 @@ import 'package:latlong2/latlong.dart';
 
 import '../../core/utils/formatters.dart';
 import '../../core/utils/time.dart';
+import 'place.dart';
 import 'price_range.dart';
 
 class BarAccessibility {
@@ -35,13 +36,46 @@ class BarAccessibility {
       };
 }
 
+/// A time-limited offer published by the venue (food, soft drinks, …).
+class HappyHour {
+  const HappyHour({
+    required this.from,
+    required this.to,
+    required this.label,
+  });
+
+  factory HappyHour.fromJson(Map<String, dynamic> json) {
+    return HappyHour(
+      from: parseEveningTime(json['from'] as String),
+      to: parseEveningTime(json['to'] as String),
+      label: json['label'] as String,
+    );
+  }
+
+  /// Window on the evening axis.
+  final int from;
+  final int to;
+  final String label;
+
+  bool isActiveAt(int minutes) => minutes >= from && minutes < to;
+
+  String get hours => '${formatClock(from)}–${formatClock(to)}';
+
+  Map<String, dynamic> toJson() => {
+        'from': formatClock(from),
+        'to': formatClock(to),
+        'label': label,
+      };
+}
+
 /// A bar in Kraków. All names in the mock data are fictional.
-class Bar {
+class Bar implements Place {
   const Bar({
     required this.id,
     required this.name,
     required this.address,
     required this.district,
+    required this.districtNo,
     required this.zoneId,
     required this.location,
     required this.description,
@@ -59,6 +93,9 @@ class Bar {
     required this.publicRating,
     required this.publicRatingCount,
     required this.accessibility,
+    this.nonAlcoholic = false,
+    this.happyHour,
+    this.isNew = false,
   });
 
   factory Bar.fromJson(Map<String, dynamic> json) {
@@ -70,11 +107,13 @@ class Bar {
     }
 
     final kitchenUntil = json['kitchenUntil'] as String?;
+    final happyHour = json['happyHour'] as Map<String, dynamic>?;
     return Bar(
       id: json['id'] as String,
       name: json['name'] as String,
       address: json['address'] as String,
       district: json['district'] as String,
+      districtNo: (json['districtNo'] as num?)?.toInt() ?? 0,
       zoneId: json['zoneId'] as String? ?? '',
       location: LatLng(
         (json['lat'] as num).toDouble(),
@@ -100,6 +139,9 @@ class Bar {
       accessibility: BarAccessibility.fromJson(
         json['accessibility'] as Map<String, dynamic>?,
       ),
+      nonAlcoholic: json['nonAlcoholic'] as bool? ?? false,
+      happyHour: happyHour == null ? null : HappyHour.fromJson(happyHour),
+      isNew: json['isNew'] as bool? ?? false,
     );
   }
 
@@ -109,16 +151,24 @@ class Bar {
   /// Kitchen open at least until this time counts as "late kitchen".
   static const int lateKitchenFrom = 22 * 60;
 
+  @override
   final String id;
+  @override
   final String name;
   final String address;
+  @override
   final String district;
+  @override
+  final int districtNo;
 
   /// City zone used for crowd levels and quiet-hours info.
+  @override
   final String zoneId;
+  @override
   final LatLng location;
   final String description;
   final List<String> tags;
+  @override
   final String emoji;
 
   /// Lesser-known bar – visiting it gives bonus points.
@@ -144,6 +194,15 @@ class Bar {
   final int publicRatingCount;
   final BarAccessibility accessibility;
 
+  /// Good non-alcoholic menu (0% beer, lemonades, …).
+  final bool nonAlcoholic;
+  final HappyHour? happyHour;
+  @override
+  final bool isNew;
+
+  @override
+  PlaceType get type => PlaceType.bar;
+
   String get qrPayload => '$qrPrefix$id';
 
   String get openHours => '${formatClock(opensAt)}–${formatClock(closesAt)}';
@@ -153,7 +212,10 @@ class Bar {
     return kitchen != null && kitchen >= lateKitchenFrom;
   }
 
+  bool isHappyHourAt(int minutes) => happyHour?.isActiveAt(minutes) ?? false;
+
   /// [minutes] on the evening axis.
+  @override
   bool isOpenAt(int minutes) => minutes >= opensAt && minutes < closesAt;
 
   Map<String, dynamic> toJson() {
@@ -163,6 +225,7 @@ class Bar {
       'name': name,
       'address': address,
       'district': district,
+      'districtNo': districtNo,
       'zoneId': zoneId,
       'lat': location.latitude,
       'lng': location.longitude,
@@ -181,6 +244,9 @@ class Bar {
       'publicRating': publicRating,
       'publicRatingCount': publicRatingCount,
       'accessibility': accessibility.toJson(),
+      'nonAlcoholic': nonAlcoholic,
+      'happyHour': happyHour?.toJson(),
+      'isNew': isNew,
     };
   }
 }

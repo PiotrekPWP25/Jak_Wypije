@@ -8,6 +8,9 @@ import '../../data/models/friend.dart';
 import '../../data/models/review.dart';
 import '../../data/repositories/social_repository.dart';
 import '../checkin/check_in_controller.dart';
+import '../gamification/challenges.dart';
+import '../gamification/gamification_providers.dart';
+import '../gamification/scoring.dart';
 import '../profile/profile_providers.dart';
 import 'reviews_controller.dart';
 
@@ -123,12 +126,16 @@ int streakWeeksFrom(List<CheckIn> checkIns, DateTime now) {
 Duration untilWeekEnds(DateTime now) =>
     weekStart(now).add(const Duration(days: 7)).difference(now);
 
+/// Weekly XP: check-ins and reviews, plus walking and finished challenges –
+/// the league rewards exploring the city, not drinking.
 final myWeeklyXpProvider = Provider<int>((ref) {
   return weeklyXpFrom(
-    checkIns: ref.watch(checkInsProvider),
-    myReviews: ref.watch(myReviewsProvider),
-    now: DateTime.now(),
-  );
+        checkIns: ref.watch(checkInsProvider),
+        myReviews: ref.watch(myReviewsProvider),
+        now: DateTime.now(),
+      ) +
+      walkingXp(ref.watch(walkedMetersWeekProvider)) +
+      challengeXp(ref.watch(weeklyChallengesProvider));
 });
 
 final myStreakWeeksProvider = Provider<int>(

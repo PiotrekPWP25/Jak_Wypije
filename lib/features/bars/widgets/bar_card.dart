@@ -23,7 +23,7 @@ class BarCard extends ConsumerWidget {
     final bar = listing.bar;
     final crowd = listing.crowd;
     final inPlan = ref.watch(
-      plannerProvider.select((plan) => plan.barIds.contains(bar.id)),
+      plannerProvider.select((plan) => plan.stopIds.contains(bar.id)),
     );
 
     return Card(
@@ -65,6 +65,12 @@ class BarCard extends ConsumerWidget {
                         ),
                         const SizedBox(height: 4),
                         PublicRatingText(bar: bar),
+                        if (bar.isNew ||
+                            bar.nonAlcoholic ||
+                            bar.happyHour != null) ...[
+                          const SizedBox(height: 6),
+                          BarBadges(bar: bar, happyNow: listing.isHappyHour),
+                        ],
                       ],
                     ),
                   ),

@@ -11,9 +11,13 @@ import 'features/bars/bars_screen.dart';
 import 'features/checkin/check_in_screen.dart';
 import 'features/friends/friends_screen.dart';
 import 'features/home/home_screen.dart';
+import 'features/landmark_detail/landmark_detail_screen.dart';
 import 'features/map/map_screen.dart';
+import 'features/onboarding/onboarding_screen.dart';
+import 'features/passport/passport_screen.dart';
 import 'features/profile/profile_screen.dart';
 import 'features/splash/splash_screen.dart';
+import 'features/trips/trip_preview_screen.dart';
 import 'widgets/home_shell.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'root');
@@ -55,13 +59,33 @@ final routerProvider = Provider<GoRouter>((ref) {
             BarDetailScreen(barId: state.pathParameters['id']!),
       ),
       GoRoute(
-        path: '/checkin',
+        path: '/landmark/:id',
         builder: (context, state) =>
-            CheckInScreen(preselectedBarId: state.uri.queryParameters['bar']),
+            LandmarkDetailScreen(landmarkId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/trip/:id',
+        builder: (context, state) =>
+            TripPreviewScreen(tripId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/checkin',
+        builder: (context, state) => CheckInScreen(
+          preselectedPlaceId: state.uri.queryParameters['place'] ??
+              state.uri.queryParameters['bar'],
+        ),
       ),
       GoRoute(
         path: '/safe-return',
         builder: (context, state) => const SafeReturnScreen(),
+      ),
+      GoRoute(
+        path: '/passport',
+        builder: (context, state) => const PassportScreen(),
+      ),
+      GoRoute(
+        path: '/onboarding',
+        builder: (context, state) => const OnboardingScreen(),
       ),
     ],
   );

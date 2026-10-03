@@ -8,8 +8,10 @@ import '../../core/utils/formatters.dart';
 import '../../core/utils/geo.dart';
 import '../../data/location/location_provider.dart';
 import '../../data/models/city_zone.dart';
+import '../../data/models/landmark.dart';
 import '../../data/models/transit_stop.dart';
 import '../../data/repositories/city_repository.dart';
+import '../../data/repositories/place_repository.dart';
 import '../../widgets/async_value_view.dart';
 import '../../widgets/bar_info.dart';
 import '../../widgets/bar_status.dart';
@@ -20,11 +22,19 @@ import 'widgets/bar_marker.dart';
 import 'widgets/bar_preview_card.dart';
 
 /// Map overlays and filters toggled with chips.
-enum MapLayer { hiddenGems, barrierFree, crowds, quietZones, nightTransit }
+enum MapLayer {
+  landmarks,
+  hiddenGems,
+  barrierFree,
+  crowds,
+  quietZones,
+  nightTransit,
+}
 
 extension _MapLayerLabel on MapLayer {
   String get label => switch (this) {
-        MapLayer.hiddenGems => '💎 Perełki',
+        MapLayer.landmarks => '🏛️ Atrakcje',
+        MapLayer.hiddenGems => '💎 Tylko perełki',
         MapLayer.barrierFree => '♿ Bez barier',
         MapLayer.crowds => '👥 Tłok teraz',
         MapLayer.quietZones => '🌙 Strefy ciszy',
@@ -41,9 +51,15 @@ class MapScreen extends ConsumerStatefulWidget {
 
 class _MapScreenState extends ConsumerState<MapScreen> {
   final MapController _mapController = MapController();
-  final Set<MapLayer> _layers = {MapLayer.crowds};
+  final Set<MapLayer> _layers = {MapLayer.landmarks, MapLayer.crowds};
   String? _selectedBarId;
+  Landmark? _selectedLandmark;
   TransitStop? _selectedStop;
+
+  bool get _hasSelection =>
+      _selectedBarId != null ||
+      _selectedLandmark != null ||
+      _selectedStop != null;
 
   @override
   void dispose() {
@@ -51,9 +67,15 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     super.dispose();
   }
 
+  void _clearSelection() {
+    _selectedBarId = null;
+    _selectedLandmark = null;
+    _selectedStop = null;
+  }
+
   void _toggle(MapLayer layer) => setState(() {
         if (!_layers.remove(layer)) _layers.add(layer);
-        _selectedBarId = null;
+        _clearSelection();
       });
 
   Future<void> _centerOnUser() async {
@@ -82,8 +104,9 @@ class _MapScreenState extends ConsumerState<MapScreen> {
         value: listings,
         data: _buildMap,
       ),
-      floatingActionButton: _selectedBarId == null
-          ? Column(
+      floatingActionButton: _hasSelection
+          ? null
+          : Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
@@ -101,14 +124,16 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                   label: const Text('Melduj się'),
                 ),
               ],
-            )
-          : null,
+            ),
     );
   }
 
   Widget _buildMap(List<BarListing> listings) {
     final position = ref.watch(userPositionProvider).valueOrNull;
     final plan = ref.watch(plannerProvider);
+    final placesById = ref.watch(placesByIdProvider);
+    final landmarks =
+        ref.watch(landmarksProvider).valueOrNull ?? const <Landmark>[];
     final zones = ref.watch(zonesProvider).valueOrNull ?? const <CityZone>[];
     final stops =
         ref.watch(transitStopsProvider).valueOrNull ?? const <TransitStop>[];
@@ -116,10 +141,10 @@ class _MapScreenState extends ConsumerState<MapScreen> {
 
     final byId = {for (final listing in listings) listing.bar.id: listing};
     final planIndexById = {
-      for (var i = 0; i < plan.barIds.length; i++) plan.barIds[i]: i,
+      for (var i = 0; i < plan.stopIds.length; i++) plan.stopIds[i]: i,
     };
     final planPoints =
-        plan.barIds.map((id) => byId[id]?.bar.location).nonNulls.toList();
+        plan.stopIds.map((id) => placesById[id]?.location).nonNulls.toList();
     final visible = listings.where((listing) {
       if (_layers.contains(MapLayer.hiddenGems) && !listing.bar.isHiddenGem) {
         return false;
@@ -131,6 +156,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
       return true;
     }).toList();
     final selected = byId[_selectedBarId];
+    final landmark = _selectedLandmark;
     final stop = _selectedStop;
 
     return Stack(
@@ -142,10 +168,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
             initialZoom: 13.5,
             minZoom: 10,
             maxZoom: 18,
-            onTap: (_, __) => setState(() {
-              _selectedBarId = null;
-              _selectedStop = null;
-            }),
+            onTap: (_, __) => setState(_clearSelection),
           ),
           children: [
             TileLayer(
@@ -201,11 +224,27 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                         height: 30,
                         child: TransitStopMarker(
                           onTap: () => setState(() {
+                            _clearSelection();
                             _selectedStop = transit;
-                            _selectedBarId = null;
                           }),
                         ),
                       ),
+                if (_layers.contains(MapLayer.landmarks))
+                  for (final item in landmarks)
+                    Marker(
+                      point: item.location,
+                      width: 42,
+                      height: 42,
+                      child: LandmarkMarker(
+                        emoji: item.emoji,
+                        planIndex: planIndexById[item.id],
+                        selected: item.id == landmark?.id,
+                        onTap: () => setState(() {
+                          _clearSelection();
+                          _selectedLandmark = item;
+                        }),
+                      ),
+                    ),
                 for (final listing in visible)
                   Marker(
                     point: listing.bar.location,
@@ -221,8 +260,8 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                       planIndex: planIndexById[listing.bar.id],
                       selected: listing.bar.id == _selectedBarId,
                       onTap: () => setState(() {
+                        _clearSelection();
                         _selectedBarId = listing.bar.id;
-                        _selectedStop = null;
                       }),
                     ),
                   ),
@@ -278,7 +317,18 @@ class _MapScreenState extends ConsumerState<MapScreen> {
             bottom: 24,
             child: BarPreviewCard(
               listing: selected,
-              onClose: () => setState(() => _selectedBarId = null),
+              onClose: () => setState(_clearSelection),
+            ),
+          )
+        else if (landmark != null)
+          Positioned(
+            left: 12,
+            right: 12,
+            bottom: 24,
+            child: _LandmarkPreview(
+              landmark: landmark,
+              isOpen: landmark.isOpenAt(clock.minutes),
+              onClose: () => setState(_clearSelection),
             ),
           )
         else if (stop != null)
@@ -289,10 +339,93 @@ class _MapScreenState extends ConsumerState<MapScreen> {
             child: _StopCard(
               stop: stop,
               minutes: clock.minutes,
-              onClose: () => setState(() => _selectedStop = null),
+              onClose: () => setState(_clearSelection),
             ),
           ),
       ],
+    );
+  }
+}
+
+class _LandmarkPreview extends ConsumerWidget {
+  const _LandmarkPreview({
+    required this.landmark,
+    required this.isOpen,
+    required this.onClose,
+  });
+
+  final Landmark landmark;
+  final bool isOpen;
+  final VoidCallback onClose;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final inPlan = ref.watch(
+      plannerProvider.select((plan) => plan.stopIds.contains(landmark.id)),
+    );
+    return Card(
+      elevation: 6,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Text(landmark.emoji, style: const TextStyle(fontSize: 32)),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(landmark.name, style: theme.textTheme.titleMedium),
+                      Text(
+                        '${landmark.category.label} · ${landmark.district}',
+                        style: theme.textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  onPressed: onClose,
+                  icon: const Icon(Icons.close),
+                  tooltip: 'Zamknij',
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(
+              '🕒 ${landmark.openHours}'
+              '${landmark.isAlwaysOpen ? '' : isOpen ? ' · otwarte' : ' · zamknięte'}'
+              ' · 🎟️ ${landmark.ticketLabel}'
+              ' · ⏱️ ${formatDuration(landmark.visitMinutes)}',
+              style: theme.textTheme.bodySmall,
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () =>
+                        ref.read(plannerProvider.notifier).toggle(landmark.id),
+                    icon: Icon(inPlan ? Icons.check : Icons.add),
+                    label: Text(inPlan ? 'W trasie' : 'Do trasy'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: FilledButton(
+                    onPressed: () => context.push('/landmark/${landmark.id}'),
+                    child: const Text('Szczegóły'),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -360,7 +493,7 @@ class _Legend extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textStyle = Theme.of(context).textTheme.bodySmall;
-    Widget dot(Color color, String label) => Padding(
+    Widget dot(Color color, String label, {bool square = false}) => Padding(
           padding: const EdgeInsets.symmetric(vertical: 2),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -370,7 +503,8 @@ class _Legend extends StatelessWidget {
                 height: 10,
                 decoration: BoxDecoration(
                   color: color,
-                  shape: BoxShape.circle,
+                  shape: square ? BoxShape.rectangle : BoxShape.circle,
+                  borderRadius: square ? BorderRadius.circular(2) : null,
                 ),
               ),
               const SizedBox(width: 6),
@@ -386,6 +520,7 @@ class _Legend extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            dot(AppColors.green, 'Atrakcja', square: true),
             for (final status in BarStatus.values)
               dot(status.color, status.label),
             if (showCrowds)

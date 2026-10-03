@@ -3,10 +3,10 @@ import 'package:latlong2/latlong.dart';
 
 import '../../core/utils/geo.dart';
 import '../../data/location/location_provider.dart';
-import '../../data/models/bar.dart';
 import '../../data/models/review.dart';
 import '../../data/repositories/bar_repository.dart';
 import '../../data/repositories/city_repository.dart';
+import '../../data/repositories/place_repository.dart';
 import '../barobranie/planner_controller.dart';
 import '../friends/reviews_controller.dart';
 import 'bar_filters.dart';
@@ -43,11 +43,36 @@ final referencePointProvider = Provider<ReferencePoint>((ref) {
       return me;
     case DistanceReference.lastStop:
       final plan = ref.watch(plannerProvider);
-      final bars = ref.watch(barsProvider).valueOrNull ?? const <Bar>[];
-      if (plan.barIds.isEmpty) return me;
-      final last = bars.where((bar) => bar.id == plan.barIds.last).firstOrNull;
+      if (plan.stopIds.isEmpty) return me;
+      final last = ref.watch(placesByIdProvider)[plan.stopIds.last];
       return last == null ? me : (point: last.location, label: last.name);
   }
+});
+
+/// Which list the "Bary" tab shows.
+class ShowLandmarksNotifier extends Notifier<bool> {
+  @override
+  bool build() => false;
+
+  void set(bool value) => state = value;
+}
+
+final showLandmarksProvider = NotifierProvider<ShowLandmarksNotifier, bool>(
+  ShowLandmarksNotifier.new,
+);
+
+/// Landmarks with distance from the reference point and "open now".
+final landmarkListingsProvider =
+    Provider<AsyncValue<List<LandmarkListing>>>((ref) {
+  final reference = ref.watch(referencePointProvider);
+  final clock = ref.watch(cityClockProvider);
+  return ref.watch(landmarksProvider).whenData(
+        (landmarks) => buildLandmarkListings(
+          landmarks: landmarks,
+          reference: reference.point,
+          nowMinutes: clock.minutes,
+        ),
+      );
 });
 
 class BarFiltersNotifier extends Notifier<BarFilters> {
