@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/check_in.dart';
 import '../models/evening_plan.dart';
 import '../models/review.dart';
+import '../models/user_profile.dart';
 
 /// Overridden in `main()` with an already initialised instance.
 final sharedPreferencesProvider = Provider<SharedPreferences>(
@@ -25,7 +26,7 @@ class LocalStorage {
 
   final SharedPreferences _prefs;
 
-  static const String defaultUserName = 'Ty';
+  static const String defaultUserName = UserProfile.defaultName;
 
   static const String _checkInsKey = 'check_ins';
   static const String _planKey = 'evening_plan';
@@ -34,6 +35,29 @@ class LocalStorage {
   static const String _themeModeKey = 'theme_mode';
   static const String _safeReturnsKey = 'safe_returns';
   static const String _userModeKey = 'user_mode';
+  static const String _avatarKey = 'avatar_emoji';
+  static const String _ageConfirmedKey = 'age_confirmed_at';
+  static const String _termsVersionKey = 'terms_version';
+  static const String _termsAcceptedKey = 'terms_accepted_at';
+  static const String _marketingKey = 'marketing_consent';
+  static const String _profileDirtyKey = 'profile_dirty';
+
+  /// Everything the user created on this device (cleared by "Wyczyść dane").
+  /// The theme stays – it is a device preference, not personal data.
+  static const List<String> _userDataKeys = [
+    _checkInsKey,
+    _planKey,
+    _myReviewsKey,
+    _userNameKey,
+    _safeReturnsKey,
+    _userModeKey,
+    _avatarKey,
+    _ageConfirmedKey,
+    _termsVersionKey,
+    _termsAcceptedKey,
+    _marketingKey,
+    _profileDirtyKey,
+  ];
 
   List<CheckIn> loadCheckIns() =>
       List<CheckIn>.unmodifiable(_readList(_checkInsKey).map(CheckIn.fromJson));
@@ -89,6 +113,66 @@ class LocalStorage {
 
   Future<void> saveUserMode(String mode) async {
     await _prefs.setString(_userModeKey, mode);
+  }
+
+  /// Profile assembled from the individual keys the notifiers use.
+  UserProfile loadProfile() => UserProfile(
+        displayName: loadUserName(),
+        avatarEmoji: _prefs.getString(_avatarKey) ?? UserProfile.defaultAvatar,
+        userMode: loadUserMode(),
+        themeMode: loadThemeMode().name,
+        ageConfirmedAt: _readDate(_ageConfirmedKey),
+        termsVersion: _prefs.getInt(_termsVersionKey) ?? 0,
+        termsAcceptedAt: _readDate(_termsAcceptedKey),
+        marketingConsent: _prefs.getBool(_marketingKey) ?? false,
+      );
+
+  Future<void> saveProfile(UserProfile profile) async {
+    await _prefs.setString(_userNameKey, profile.displayName);
+    await _prefs.setString(_avatarKey, profile.avatarEmoji);
+    final mode = profile.userMode;
+    if (mode != null) await _prefs.setString(_userModeKey, mode);
+    final theme = profile.themeMode;
+    if (theme != null) await _prefs.setString(_themeModeKey, theme);
+    await _writeDate(_ageConfirmedKey, profile.ageConfirmedAt);
+    await _prefs.setInt(_termsVersionKey, profile.termsVersion);
+    await _writeDate(_termsAcceptedKey, profile.termsAcceptedAt);
+    await _prefs.setBool(_marketingKey, profile.marketingConsent);
+  }
+
+  /// `true` while a profile change still has to reach the account.
+  bool loadProfileDirty() => _prefs.getBool(_profileDirtyKey) ?? false;
+
+  Future<void> saveProfileDirty(bool dirty) async {
+    await _prefs.setBool(_profileDirtyKey, dirty);
+  }
+
+  /// Everything stored about the user – for the GDPR data export.
+  Map<String, dynamic> exportUserData() => {
+        'profile': loadProfile().toJson(),
+        'checkIns': [for (final checkIn in loadCheckIns()) checkIn.toJson()],
+        'eveningPlan': loadPlan()?.toJson(),
+        'myReviews': [for (final review in loadMyReviews()) review.toJson()],
+        'safeReturns': loadSafeReturns(),
+      };
+
+  Future<void> clearUserData() async {
+    for (final key in _userDataKeys) {
+      await _prefs.remove(key);
+    }
+  }
+
+  DateTime? _readDate(String key) {
+    final raw = _prefs.getString(key);
+    return raw == null ? null : DateTime.tryParse(raw);
+  }
+
+  Future<void> _writeDate(String key, DateTime? value) async {
+    if (value == null) {
+      await _prefs.remove(key);
+    } else {
+      await _prefs.setString(key, value.toUtc().toIso8601String());
+    }
   }
 
   List<Map<String, dynamic>> _readList(String key) {

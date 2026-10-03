@@ -23,6 +23,7 @@ import '../friends/leagues.dart';
 import '../gamification/challenges_card.dart';
 import '../gamification/gamification_providers.dart';
 import '../onboarding/user_mode.dart';
+import '../account/account_providers.dart';
 import '../profile/profile_providers.dart';
 import '../trips/trips_widgets.dart';
 
@@ -124,9 +125,9 @@ class _Header extends ConsumerWidget {
           IconButton(
             tooltip: 'Profil',
             onPressed: () => context.push('/profile'),
-            icon: const CircleAvatar(
+            icon: CircleAvatar(
               backgroundColor: AppColors.amber,
-              child: Text('🍺'),
+              child: Text(ref.watch(profileProvider).avatarEmoji),
             ),
           ),
         ],

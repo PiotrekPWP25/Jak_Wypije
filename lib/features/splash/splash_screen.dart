@@ -5,17 +5,21 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/theme/app_colors.dart';
+import '../../data/local/local_storage.dart';
 import '../../data/location/location_provider.dart';
 import '../../data/repositories/bar_repository.dart';
 import '../../data/repositories/city_repository.dart';
 import '../../data/repositories/place_repository.dart';
 import '../../data/repositories/social_repository.dart';
-import '../onboarding/user_mode.dart';
+import '../account/account_providers.dart';
 
 /// Branded loading screen: the logo pops in while a beer "pours" into the
 /// progress bar and the app preloads bars, city data and location.
 class SplashScreen extends ConsumerStatefulWidget {
-  const SplashScreen({super.key});
+  const SplashScreen({super.key, this.resetUserData = false});
+
+  /// "Wyczyść dane na tym urządzeniu" from Settings.
+  final bool resetUserData;
 
   @override
   ConsumerState<SplashScreen> createState() => _SplashScreenState();
@@ -53,6 +57,16 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   }
 
   Future<void> _preload() async {
+    if (widget.resetUserData) {
+      // Let the route transition finish first: the old tabs are still
+      // mounted during it and would rebuild with an empty profile.
+      await Future<void>.delayed(const Duration(milliseconds: 700));
+      if (!mounted) return;
+      await ref.read(localStorageProvider).clearUserData();
+      ref.invalidate(localStorageProvider);
+    }
+    // Ask for location only after the age gate and consents.
+    final onboarding = needsOnboarding(ref.read(profileProvider));
     try {
       await Future.wait<Object?>([
         ref.read(barsProvider.future),
@@ -63,17 +77,18 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
         ref.read(tripsProvider.future),
         ref.read(eventsProvider.future),
         ref.read(districtsProvider.future),
-        ref
-            .read(userPositionProvider.future)
-            .timeout(const Duration(seconds: 3), onTimeout: () => null),
+        if (!onboarding)
+          ref
+              .read(userPositionProvider.future)
+              .timeout(const Duration(seconds: 3), onTimeout: () => null),
         Future<void>.delayed(_minimumDuration),
       ]);
     } catch (_) {
       // Screens show their own error states; never block on the splash.
     }
     if (!mounted) return;
-    // First run: ask whether the user is a tourist or a local.
-    context.go(ref.read(userModeProvider) == null ? '/onboarding' : '/start');
+    // First run (or new Terms): age gate, consents, tourist or local.
+    context.go(onboarding ? '/onboarding' : '/start');
   }
 
   @override

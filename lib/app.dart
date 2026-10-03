@@ -4,6 +4,9 @@ import 'package:go_router/go_router.dart';
 
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_controller.dart';
+import 'features/account/auth_screen.dart';
+import 'features/account/code_screen.dart';
+import 'features/account/profile_sync.dart';
 import 'features/bar_detail/bar_detail_screen.dart';
 import 'features/barobranie/barobranie_screen.dart';
 import 'features/barobranie/safe_return_screen.dart';
@@ -16,6 +19,8 @@ import 'features/map/map_screen.dart';
 import 'features/onboarding/onboarding_screen.dart';
 import 'features/passport/passport_screen.dart';
 import 'features/profile/profile_screen.dart';
+import 'features/settings/legal_screen.dart';
+import 'features/settings/settings_screen.dart';
 import 'features/splash/splash_screen.dart';
 import 'features/trips/trip_preview_screen.dart';
 import 'widgets/home_shell.dart';
@@ -32,7 +37,9 @@ final routerProvider = Provider<GoRouter>((ref) {
     routes: [
       GoRoute(
         path: '/splash',
-        builder: (context, state) => const SplashScreen(),
+        builder: (context, state) => SplashScreen(
+          resetUserData: state.uri.queryParameters['reset'] == '1',
+        ),
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) =>
@@ -87,6 +94,34 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/onboarding',
         builder: (context, state) => const OnboardingScreen(),
       ),
+      GoRoute(
+        path: '/settings',
+        builder: (context, state) => const SettingsScreen(),
+      ),
+      GoRoute(
+        path: '/auth',
+        builder: (context, state) => AuthScreen(
+          signUp: state.uri.queryParameters['signup'] == '1',
+          next: state.uri.queryParameters['next'],
+        ),
+      ),
+      GoRoute(
+        path: '/auth/code',
+        builder: (context, state) => CodeScreen(
+          email: state.uri.queryParameters['email'] ?? '',
+          recovery: state.uri.queryParameters['type'] == 'recovery',
+          next: state.uri.queryParameters['next'],
+        ),
+      ),
+      GoRoute(
+        path: '/legal/:doc',
+        redirect: (context, state) =>
+            LegalDoc.byName(state.pathParameters['doc']!) == null
+                ? '/settings'
+                : null,
+        builder: (context, state) =>
+            LegalScreen(doc: LegalDoc.byName(state.pathParameters['doc']!)!),
+      ),
     ],
   );
   ref.onDispose(router.dispose);
@@ -98,6 +133,8 @@ class JakWypijeApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Keeps the profile in sync with the account for the whole session.
+    ref.listen(profileSyncProvider, (_, __) {});
     return MaterialApp.router(
       title: 'JakWypiję',
       debugShowCheckedModeBanner: false,

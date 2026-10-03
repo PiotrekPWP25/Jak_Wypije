@@ -11,6 +11,7 @@ import '../checkin/check_in_controller.dart';
 import '../gamification/challenges.dart';
 import '../gamification/gamification_providers.dart';
 import '../gamification/scoring.dart';
+import '../account/account_providers.dart';
 import '../profile/profile_providers.dart';
 import 'reviews_controller.dart';
 
@@ -157,7 +158,7 @@ final leagueTableProvider = Provider<LeagueTable>((ref) {
     LeagueEntry(
       id: 'me',
       name: ref.watch(userNameProvider),
-      emoji: '🍺',
+      emoji: ref.watch(profileProvider).avatarEmoji,
       weeklyXp: ref.watch(myWeeklyXpProvider),
       isMe: true,
     ),

@@ -3,14 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/theme/app_colors.dart';
-import '../../core/theme/theme_controller.dart';
 import '../../core/utils/formatters.dart';
 import '../../data/repositories/place_repository.dart';
 import '../../widgets/empty_state.dart';
 import '../../widgets/section_header.dart';
+import '../../widgets/name_dialog.dart';
+import '../account/account_providers.dart';
 import '../checkin/check_in_controller.dart';
 import '../friends/trophies.dart';
-import '../onboarding/user_mode.dart';
 import 'profile_providers.dart';
 
 class ProfileScreen extends ConsumerWidget {
@@ -23,7 +23,7 @@ class ProfileScreen extends ConsumerWidget {
   ) async {
     final result = await showDialog<String>(
       context: context,
-      builder: (_) => _NameDialog(initial: current),
+      builder: (_) => NameDialog(initial: current),
     );
     if (result == null) return;
     await ref.read(userNameProvider.notifier).rename(result);
@@ -36,9 +36,7 @@ class ProfileScreen extends ConsumerWidget {
     final level = levelFor(stats.points);
     final trophies = ref.watch(trophiesProvider);
     final checkIns = ref.watch(checkInsProvider);
-    final themeMode = ref.watch(themeModeProvider);
     final placesById = ref.watch(placesByIdProvider);
-    final mode = ref.watch(userModeProvider) ?? UserMode.tourist;
     int countTier(TrophyTier tier) =>
         trophies.where((trophy) => trophy.tier == tier).length;
 
@@ -51,54 +49,22 @@ class ProfileScreen extends ConsumerWidget {
             icon: const Icon(Icons.edit_outlined),
             onPressed: () => _editName(context, ref, name),
           ),
+          IconButton(
+            tooltip: 'Ustawienia',
+            icon: const Icon(Icons.settings_outlined),
+            onPressed: () => context.push('/settings'),
+          ),
         ],
       ),
       body: ListView(
         padding: const EdgeInsets.only(bottom: 24),
         children: [
-          _ProfileHeader(name: name, level: level, points: stats.points),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: SegmentedButton<ThemeMode>(
-              segments: const [
-                ButtonSegment(
-                  value: ThemeMode.light,
-                  icon: Icon(Icons.light_mode_outlined),
-                  label: Text('Jasny'),
-                ),
-                ButtonSegment(
-                  value: ThemeMode.dark,
-                  icon: Icon(Icons.dark_mode_outlined),
-                  label: Text('Ciemny'),
-                ),
-              ],
-              selected: {themeMode},
-              onSelectionChanged: (selection) =>
-                  ref.read(themeModeProvider.notifier).set(selection.first),
-            ),
+          _ProfileHeader(
+            name: name,
+            avatar: ref.watch(profileProvider).avatarEmoji,
+            level: level,
+            points: stats.points,
           ),
-          const SizedBox(height: 8),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: SegmentedButton<UserMode>(
-              segments: const [
-                ButtonSegment(
-                  value: UserMode.tourist,
-                  icon: Icon(Icons.luggage_outlined),
-                  label: Text('Turysta'),
-                ),
-                ButtonSegment(
-                  value: UserMode.local,
-                  icon: Icon(Icons.home_outlined),
-                  label: Text('Mieszkaniec'),
-                ),
-              ],
-              selected: {mode},
-              onSelectionChanged: (selection) =>
-                  ref.read(userModeProvider.notifier).set(selection.first),
-            ),
-          ),
-          const SizedBox(height: 8),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: OutlinedButton.icon(
@@ -179,11 +145,13 @@ class ProfileScreen extends ConsumerWidget {
 class _ProfileHeader extends StatelessWidget {
   const _ProfileHeader({
     required this.name,
+    required this.avatar,
     required this.level,
     required this.points,
   });
 
   final String name;
+  final String avatar;
   final Level level;
   final int points;
 
@@ -195,10 +163,10 @@ class _ProfileHeader extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       child: Row(
         children: [
-          const CircleAvatar(
+          CircleAvatar(
             radius: 36,
             backgroundColor: AppColors.amber,
-            child: Text('🍺', style: TextStyle(fontSize: 32)),
+            child: Text(avatar, style: const TextStyle(fontSize: 32)),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -295,50 +263,6 @@ class _StatsGrid extends StatelessWidget {
           );
         },
       ),
-    );
-  }
-}
-
-class _NameDialog extends StatefulWidget {
-  const _NameDialog({required this.initial});
-
-  final String initial;
-
-  @override
-  State<_NameDialog> createState() => _NameDialogState();
-}
-
-class _NameDialogState extends State<_NameDialog> {
-  late final TextEditingController _controller =
-      TextEditingController(text: widget.initial);
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  void _submit() => Navigator.of(context).pop(_controller.text);
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Jak masz na imię?'),
-      content: TextField(
-        controller: _controller,
-        autofocus: true,
-        maxLength: 24,
-        textCapitalization: TextCapitalization.words,
-        onSubmitted: (_) => _submit(),
-        decoration: const InputDecoration(border: OutlineInputBorder()),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Anuluj'),
-        ),
-        FilledButton(onPressed: _submit, child: const Text('Zapisz')),
-      ],
     );
   }
 }

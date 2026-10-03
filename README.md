@@ -101,6 +101,63 @@ flutter analyze
 flutter test
 ```
 
+## Konto, ustawienia i baza danych (Supabase)
+
+Aplikacja działa **offline-first**. Bez kluczy Supabase uruchamia się w trybie demo
+i wszystko zostaje na telefonie. Z kluczami dochodzą konta (e-mail + hasło,
+potwierdzenie 6-cyfrowym kodem) i synchronizacja profilu: imię, awatar, tryb, motyw
+i zgody. Meldunki, plan i oceny na razie zostają na urządzeniu.
+
+**Ustawienia** (⚙️ w Profilu):
+- konto: logowanie, zmiana hasła, wylogowanie, usunięcie konta;
+- profil i motyw;
+- prywatność: zgoda marketingowa, eksport danych (JSON), wyczyszczenie danych;
+- 18+ i pomoc;
+- Regulamin, Polityka prywatności i licencje.
+
+**Onboarding:** bramka 18+ i akceptacja dokumentów (`assets/legal/*.md`, wersja
+`currentTermsVersion`).
+
+### Konfiguracja
+
+1. Załóż projekt na [supabase.com](https://supabase.com) w regionie **EU Central (Frankfurt)**.
+2. W **SQL Editor** uruchom `supabase/migrations/0001_profiles.sql`. Skrypt tworzy:
+   - tabelę `profiles` z RLS;
+   - trigger zakładający profil;
+   - funkcję `delete_my_account()`.
+3. **Authentication → Sign In / Providers → Email:** włączone, *Confirm email* włączone.
+4. **Authentication → Emails:** w szablonach *Confirm signup* i *Reset password* zamień
+   link na kod, np.:
+   ```html
+   <h2>Twój kod JakWypiję</h2>
+   <p>Wpisz w aplikacji kod: <strong>{{ .Token }}</strong></p>
+   <p>Kod wygasa po godzinie. Jeśli to nie Ty, zignoruj tę wiadomość.</p>
+   ```
+5. Wbudowana poczta Supabase wysyła tylko kilka maili na godzinę. Na produkcję podepnij
+   własny SMTP (*Authentication → Emails → SMTP*), a na demo możesz wyłączyć
+   *Confirm email*.
+6. Skopiuj `env/supabase.example.json` do `env/supabase.json` (plik jest w `.gitignore`)
+   i wpisz *Project URL* oraz *Publishable key* z **Project Settings → API Keys**.
+7. Uruchom:
+   ```bash
+   flutter run --release --dart-define-from-file=env/supabase.json
+   ```
+
+Klucz publishable trafia do aplikacji, a bezpieczeństwo danych zapewnia **row level
+security**: każdy widzi i zmienia tylko swój wiersz.
+
+### Przed publikacją w sklepach (do weryfikacji z prawnikiem)
+
+- Uzupełnij administratora danych i kontakt w `assets/legal/*.md` (to szkice).
+- Podpisz DPA z Supabase.
+- Google Play:
+  - strona WWW do usuwania konta;
+  - formularz *Data safety*;
+  - klasyfikacja 18+.
+- Model „promowanie happy hours” sprawdź pod kątem art. 13¹ ustawy o wychowaniu
+  w trzeźwości (zakaz reklamy i promocji alkoholu). Bezpieczniej promować wydarzenia,
+  jedzenie i opcje 0%.
+
 ## Dane i ograniczenia
 
 - **`bars.json`:** fikcyjne bary z cenami, godzinami, dostępnością, happy hours i oceną ogólną.
@@ -116,7 +173,7 @@ flutter test
 ## Wykorzystane zasoby i AI (wymóg regulaminu)
 
 - **Mapy:** © OpenStreetMap contributors (kafelki tile.openstreetmap.org); linki do Google Maps (Maps URLs).
-- **Biblioteki:** Flutter, flutter_riverpod, go_router, flutter_map, latlong2, geolocator, mobile_scanner, shared_preferences, google_fonts (Nunito), intl.
+- **Biblioteki:** Flutter, flutter_riverpod, go_router, flutter_map, latlong2, geolocator, mobile_scanner, shared_preferences, google_fonts (Nunito), intl, supabase_flutter.
 - **AI:** kod, dane przykładowe i dokumentacja powstały z pomocą **Claude Code (Anthropic)**. Zespół rozumie całe rozwiązanie i za nie odpowiada.
 - **Logo:** _uzupełnij źródło / narzędzie_.
 
@@ -126,11 +183,15 @@ flutter test
 lib/
   main.dart, app.dart        # start, router (go_router), motyw jasny/ciemny
   core/                      # theme, platform (kanał linków), utils (geo, zł, czas, maps_link)
-  data/                      # models (Place = Bar | Landmark), repositories (JSON), storage
+  core/config/env.dart       # klucze Supabase z --dart-define (brak = tryb demo)
+  data/                      # models (Place = Bar | Landmark, UserProfile), repositories
+                             # (JSON, profiles), auth (Supabase), storage
   features/                  # splash, onboarding, home, map, bars, bar_detail, landmark_detail,
                              # barobranie, trips, events, gamification, passport, friends,
-                             # profile, checkin
+                             # profile, checkin, account (logowanie, sync), settings (+ legal)
   widgets/                   # wspólne widgety
-assets/data/*.json           # mock danych · assets/images/ – logo
+assets/data/*.json           # mock danych · assets/images/ – logo · assets/legal/ – dokumenty
+supabase/migrations/         # SQL: profiles + RLS + delete_my_account()
+env/supabase.example.json    # wzór kluczy (env/supabase.json poza repo)
 docs/pitch-outline.md        # szkic prezentacji (max 10 slajdów)
 ```
