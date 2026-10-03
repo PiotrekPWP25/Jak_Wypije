@@ -1,0 +1,7 @@
+[
+  {"id": "f1", "name": "Ola", "emoji": "🦊", "points": 340, "favoriteDistrict": "Kazimierz"},
+  {"id": "f2", "name": "Kuba", "emoji": "🐻", "points": 220, "favoriteDistrict": "Podgórze"},
+  {"id": "f3", "name": "Zuza", "emoji": "🦉", "points": 510, "favoriteDistrict": "Stare Miasto"},
+  {"id": "f4", "name": "Marek", "emoji": "🐢", "points": 95, "favoriteDistrict": "Nowa Huta"},
+  {"id": "f5", "name": "Natalia", "emoji": "🐝", "points": 275, "favoriteDistrict": "Dębniki"}
+]

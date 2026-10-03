@@ -1,0 +1,16 @@
+[
+  {"id": "rv01", "barId": "b01", "authorId": "f1", "rating": 5, "comment": "Najlepsze IPA na Kazimierzu, a barman zna historię każdego kapsla.", "createdAt": "2026-09-27T21:15:00"},
+  {"id": "rv02", "barId": "b01", "authorId": "f3", "rating": 4, "comment": "Mało miejsca, ale klimat wynagradza.", "createdAt": "2026-09-20T22:40:00"},
+  {"id": "rv03", "barId": "b03", "authorId": "f2", "rating": 5, "comment": "Czwartkowy jam – obowiązkowo!", "createdAt": "2026-09-25T23:05:00"},
+  {"id": "rv04", "barId": "b04", "authorId": "f4", "rating": 4, "comment": "Tanio i z klimatem. Kasownik działa!", "createdAt": "2026-09-18T20:30:00"},
+  {"id": "rv05", "barId": "b06", "authorId": "f1", "rating": 5, "comment": "Wsparłam w Barobraniu i nie żałuję – Piwo Ratowników sztos.", "createdAt": "2026-09-30T19:45:00"},
+  {"id": "rv06", "barId": "b07", "authorId": "f5", "rating": 5, "comment": "Nalewka pigwowa jak u dziadków.", "createdAt": "2026-09-22T21:00:00"},
+  {"id": "rv07", "barId": "b08", "authorId": "f3", "rating": 5, "comment": "Pani Hela to skarb Krakowa. Wpłaćcie na zbiórkę!", "createdAt": "2026-10-01T20:10:00"},
+  {"id": "rv08", "barId": "b08", "authorId": "f5", "rating": 4, "comment": "Jak w mieszkaniu babci, tylko z barem.", "createdAt": "2026-09-15T19:20:00"},
+  {"id": "rv09", "barId": "b09", "authorId": "f2", "rating": 4, "comment": "Quiz trudny, piwo tanie. Wygraliśmy raz.", "createdAt": "2026-09-23T22:15:00"},
+  {"id": "rv10", "barId": "b11", "authorId": "f4", "rating": 5, "comment": "Podróż w czasie za 10 zł. Trzeba ich ratować.", "createdAt": "2026-09-29T18:50:00"},
+  {"id": "rv11", "barId": "b12", "authorId": "f5", "rating": 5, "comment": "Zachód słońca z Łódki to najlepszy widok w mieście.", "createdAt": "2026-09-10T19:30:00"},
+  {"id": "rv12", "barId": "b13", "authorId": "f1", "rating": 4, "comment": "Dwadzieścia kranów i zero nudy.", "createdAt": "2026-09-26T21:40:00"},
+  {"id": "rv13", "barId": "b02", "authorId": "f3", "rating": 3, "comment": "Koty super, ale tłok i drogo.", "createdAt": "2026-09-12T20:00:00"},
+  {"id": "rv14", "barId": "b05", "authorId": "f2", "rating": 3, "comment": "Fajne koncerty, za głośno na rozmowę.", "createdAt": "2026-09-19T23:30:00"}
+]
