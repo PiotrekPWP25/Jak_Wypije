@@ -137,7 +137,7 @@ void main() {
   });
 
   group('validators', () {
-    test('e-mail, password, name and code', () {
+    test('e-mail, password and name', () {
       expect(Validators.email('ola@example.com'), isNull);
       expect(Validators.email('ola@'), isNotNull);
       expect(Validators.email(''), isNotNull);
@@ -145,9 +145,6 @@ void main() {
       expect(Validators.password('12345678'), isNull);
       expect(Validators.displayName('   '), isNotNull);
       expect(Validators.displayName('Ola'), isNull);
-      expect(Validators.code('123456'), isNull);
-      expect(Validators.code('12a456'), isNotNull);
-      expect(Validators.code('123'), isNotNull);
     });
   });
 
@@ -160,7 +157,28 @@ void main() {
     );
     expect(
       authErrorMessage(const AuthException('x', code: 'otp_expired')),
-      contains('Kod'),
+      contains('Link'),
+    );
+    expect(
+      authErrorMessage(const AuthException('x', code: 'flow_state_not_found')),
+      contains('tym telefonie'),
+    );
+    // An expired link from the e-mail (error_code arrives as statusCode).
+    expect(
+      authErrorMessage(
+        const AuthException(
+          'Email link is invalid or has expired',
+          code: 'access_denied',
+          statusCode: 'otp_expired',
+        ),
+      ),
+      contains('Link'),
+    );
+    expect(
+      authErrorMessage(
+        const AuthException('Code verifier could not be found in storage.'),
+      ),
+      contains('tym telefonie'),
     );
     expect(authErrorMessage(TimeoutException('t')), contains('połączenia'));
     expect(authErrorMessage(StateError('?')), contains('Spróbuj'));

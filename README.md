@@ -104,9 +104,15 @@ flutter test
 ## Konto, ustawienia i baza danych (Supabase)
 
 Aplikacja działa **offline-first**. Bez kluczy Supabase uruchamia się w trybie demo
-i wszystko zostaje na telefonie. Z kluczami dochodzą konta (e-mail + hasło,
-potwierdzenie 6-cyfrowym kodem) i synchronizacja profilu: imię, awatar, tryb, motyw
-i zgody. Meldunki, plan i oceny na razie zostają na urządzeniu.
+i wszystko zostaje na telefonie. Z kluczami dochodzą konta (e-mail + hasło) i synchronizacja
+profilu: imię, awatar, tryb, motyw i zgody. Meldunki, plan i oceny na razie zostają na
+urządzeniu.
+
+Potwierdzenie konta i reset hasła działają na **domyślnych mailach Supabase** (bez edycji
+szablonów, które w darmowym planie wymagają własnego SMTP). Link z maila przekierowuje na
+`pl.hackyeah.jakwypije://auth`, otwiera aplikację, a `supabase_flutter` loguje użytkownika.
+Link resetu otwiera ekran „Nowe hasło”. Link trzeba otworzyć na tym samym telefonie (PKCE).
+Potwierdzenie otwarte na komputerze też aktywuje konto – wtedy logujesz się hasłem.
 
 **Ustawienia** (⚙️ w Profilu):
 - konto: logowanie, zmiana hasła, wylogowanie, usunięcie konta;
@@ -126,16 +132,11 @@ i zgody. Meldunki, plan i oceny na razie zostają na urządzeniu.
    - trigger zakładający profil;
    - funkcję `delete_my_account()`.
 3. **Authentication → Sign In / Providers → Email:** włączone, *Confirm email* włączone.
-4. **Authentication → Emails:** w szablonach *Confirm signup* i *Reset password* zamień
-   link na kod, np.:
-   ```html
-   <h2>Twój kod JakWypiję</h2>
-   <p>Wpisz w aplikacji kod: <strong>{{ .Token }}</strong></p>
-   <p>Kod wygasa po godzinie. Jeśli to nie Ty, zignoruj tę wiadomość.</p>
-   ```
-5. Wbudowana poczta Supabase wysyła tylko kilka maili na godzinę. Na produkcję podepnij
-   własny SMTP (*Authentication → Emails → SMTP*), a na demo możesz wyłączyć
-   *Confirm email*.
+4. **Authentication → URL Configuration → Redirect URLs:** dodaj
+   `pl.hackyeah.jakwypije://auth`. Bez tego linki z maili prowadzą na *Site URL*
+   zamiast do aplikacji.
+5. Wbudowana poczta Supabase wysyła tylko kilka maili na godzinę (wystarczy na demo).
+   Na produkcję podepnij własny SMTP.
 6. Skopiuj `env/supabase.example.json` do `env/supabase.json` (plik jest w `.gitignore`)
    i wpisz *Project URL* oraz *Publishable key* z **Project Settings → API Keys**.
 7. Uruchom:

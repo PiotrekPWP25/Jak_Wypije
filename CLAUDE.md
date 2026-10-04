@@ -25,7 +25,8 @@ Struktura: lib/
   features/splash, onboarding, home, map, bars (bary + atrakcje), bar_detail, landmark_detail,
   barobranie (trasa, eksport, bezpieczny powrót), trips, events, gamification (punktacja,
   wyzwania), passport, friends (ligi, pucharki), profile, checkin,
-  account (logowanie, kod z maila, synchronizacja profilu), settings (ustawienia, dokumenty)
+  account (logowanie, linki z maila przez deep link pl.hackyeah.jakwypije://auth,
+  synchronizacja profilu), settings (ustawienia, dokumenty)
   widgets/ (wspólne)
 
 Nawigacja: Start · Mapa · Bary · Barobranie · Znajomi; Profil z awatara na Starcie,

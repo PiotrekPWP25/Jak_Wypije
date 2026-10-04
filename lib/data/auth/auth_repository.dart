@@ -3,11 +3,14 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../core/config/env.dart';
 import '../remote/supabase_provider.dart';
 
-/// E-mail + password accounts. Confirmation and password reset use the
-/// 6-digit code from the e-mail (no deep links needed) – the Supabase e-mail
-/// templates must contain `{{ .Token }}`, see README.
+/// E-mail + password accounts. Sign-up confirmation and password reset use
+/// the links from Supabase's default e-mails: they redirect to
+/// [Env.authCallbackUrl], which opens the app, and `supabase_flutter`
+/// exchanges the link for a session (PKCE, so the link has to be opened on
+/// the phone that asked for it).
 class AuthRepository {
   const AuthRepository(this._client);
 
@@ -22,7 +25,12 @@ class AuthRepository {
   Stream<User?> userChanges() =>
       _auth.onAuthStateChange.map((state) => state.session?.user);
 
-  /// Returns `true` when the account still has to be confirmed with a code.
+  /// Auth events, including `passwordRecovery` after a reset link opened
+  /// the app and errors from expired links.
+  Stream<AuthChangeEvent> events() =>
+      _auth.onAuthStateChange.map((state) => state.event);
+
+  /// Returns `true` when the account still has to be confirmed by e-mail.
   Future<bool> signUp({
     required String email,
     required String password,
@@ -31,21 +39,19 @@ class AuthRepository {
     final response = await _auth.signUp(
       email: email,
       password: password,
+      emailRedirectTo: Env.authCallbackUrl,
       data: {'display_name': displayName},
     ).timeout(_timeout);
     return response.session == null;
   }
 
-  Future<void> verifySignupCode({
-    required String email,
-    required String code,
-  }) =>
-      _auth
-          .verifyOTP(email: email, token: code, type: OtpType.signup)
-          .timeout(_timeout);
-
-  Future<void> resendSignupCode(String email) =>
-      _auth.resend(email: email, type: OtpType.signup).timeout(_timeout);
+  Future<void> resendConfirmation(String email) => _auth
+      .resend(
+        email: email,
+        type: OtpType.signup,
+        emailRedirectTo: Env.authCallbackUrl,
+      )
+      .timeout(_timeout);
 
   Future<void> signIn({required String email, required String password}) =>
       _auth
@@ -60,21 +66,10 @@ class AuthRepository {
     }
   }
 
-  Future<void> sendPasswordReset(String email) =>
-      _auth.resetPasswordForEmail(email).timeout(_timeout);
-
-  /// Verifies the recovery code (which signs the user in) and sets a new
-  /// password.
-  Future<void> resetPassword({
-    required String email,
-    required String code,
-    required String newPassword,
-  }) async {
-    await _auth
-        .verifyOTP(email: email, token: code, type: OtpType.recovery)
-        .timeout(_timeout);
-    await changePassword(newPassword);
-  }
+  /// Sends a reset link; opening it emits `passwordRecovery` (see [events]).
+  Future<void> sendPasswordReset(String email) => _auth
+      .resetPasswordForEmail(email, redirectTo: Env.authCallbackUrl)
+      .timeout(_timeout);
 
   Future<void> changePassword(String newPassword) =>
       _auth.updateUser(UserAttributes(password: newPassword)).timeout(_timeout);
@@ -112,14 +107,39 @@ String authErrorMessage(Object error) {
     return 'Brak połączenia z serwerem. Sprawdź internet i spróbuj ponownie.';
   }
   if (error is AuthException) {
-    return switch (error.code) {
+    // Links from e-mails put `error` in `code` and `error_code` in
+    // `statusCode`, so both are checked.
+    final known = [error.code, error.statusCode]
+        .map(_authCodeMessage)
+        .nonNulls
+        .firstOrNull;
+    if (known != null) return known;
+    // PKCE: the link was opened on a different phone (or after reinstall).
+    if (error is AuthPKCEGrantCodeExchangeError ||
+        error.message.contains('Code verifier')) {
+      return _authCodeMessage('flow_state_not_found')!;
+    }
+    return 'Nie udało się: ${error.message}';
+  }
+  if (error is PostgrestException) {
+    return 'Błąd bazy danych: ${error.message}';
+  }
+  return 'Coś poszło nie tak. Spróbuj ponownie.';
+}
+
+String? _authCodeMessage(String? code) => switch (code) {
       'invalid_credentials' => 'Nieprawidłowy e-mail lub hasło.',
       'user_already_exists' ||
       'email_exists' =>
         'Konto z tym adresem już istnieje – zaloguj się.',
       'email_not_confirmed' =>
-        'Najpierw potwierdź adres e-mail kodem z wiadomości.',
-      'otp_expired' => 'Kod jest nieprawidłowy albo wygasł. Wyślij nowy.',
+        'Najpierw potwierdź adres e-mail linkiem z wiadomości.',
+      'otp_expired' => 'Link jest nieprawidłowy albo wygasł. Wyślij nowy.',
+      'flow_state_not_found' ||
+      'flow_state_expired' ||
+      'bad_code_verifier' =>
+        'Otwórz link na tym telefonie, na którym wysłano prośbę, '
+            'i spróbuj ponownie.',
       'weak_password' => 'Hasło jest za słabe – użyj co najmniej 8 znaków.',
       'same_password' => 'Nowe hasło musi być inne niż obecne.',
       'email_address_invalid' => 'Ten adres e-mail jest nieprawidłowy.',
@@ -127,11 +147,5 @@ String authErrorMessage(Object error) {
       'over_request_rate_limit' =>
         'Za dużo prób w krótkim czasie. Spróbuj za kilka minut.',
       'signup_disabled' => 'Rejestracja jest chwilowo wyłączona.',
-      _ => 'Nie udało się: ${error.message}',
+      _ => null,
     };
-  }
-  if (error is PostgrestException) {
-    return 'Błąd bazy danych: ${error.message}';
-  }
-  return 'Coś poszło nie tak. Spróbuj ponownie.';
-}

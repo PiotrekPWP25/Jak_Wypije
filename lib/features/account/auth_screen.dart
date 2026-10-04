@@ -94,13 +94,13 @@ class _SignInFormState extends ConsumerState<_SignInForm> {
       leaveAuthFlow(context, widget.next);
     } on AuthException catch (error) {
       if (error.code == 'email_not_confirmed') {
-        // Send a fresh code and let the user finish the sign-up.
+        // Send a fresh link and let the user finish the sign-up.
         try {
-          await repository.resendSignupCode(email);
+          await repository.resendConfirmation(email);
         } on Exception {
-          // The code screen has its own "send again".
+          // The check-email screen has its own "send again".
         }
-        if (mounted) _openCode(email);
+        if (mounted) _openCheckEmail(email);
         return;
       }
       _fail(error);
@@ -117,11 +117,11 @@ class _SignInFormState extends ConsumerState<_SignInForm> {
     });
   }
 
-  void _openCode(String email, {bool recovery = false}) {
+  void _openCheckEmail(String email, {bool recovery = false}) {
     setState(() => _busy = false);
     context.push(
       Uri(
-        path: '/auth/code',
+        path: '/auth/check-email',
         queryParameters: {
           'email': email,
           'type': recovery ? 'recovery' : 'signup',
@@ -145,7 +145,7 @@ class _SignInFormState extends ConsumerState<_SignInForm> {
     });
     try {
       await repository.sendPasswordReset(email);
-      if (mounted) _openCode(email, recovery: true);
+      if (mounted) _openCheckEmail(email, recovery: true);
     } on Exception catch (error) {
       _fail(error);
     }
@@ -256,7 +256,7 @@ class _SignUpFormState extends ConsumerState<_SignUpForm> {
       if (needsCode) {
         context.push(
           Uri(
-            path: '/auth/code',
+            path: '/auth/check-email',
             queryParameters: {
               'email': email,
               'type': 'signup',
@@ -339,7 +339,8 @@ class _SignUpFormState extends ConsumerState<_SignUpForm> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Wyślemy 6-cyfrowy kod na podany adres, żeby potwierdzić konto.',
+            'Wyślemy link potwierdzający na podany adres – otwórz go na tym '
+            'telefonie.',
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodySmall,
           ),
@@ -522,7 +523,7 @@ class _ResetEmailDialogState extends State<_ResetEmailDialog> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('Wyślemy kod, którym ustawisz nowe hasło.'),
+            const Text('Wyślemy link, którym ustawisz nowe hasło.'),
             const SizedBox(height: 16),
             _EmailField(controller: _controller),
           ],
@@ -533,7 +534,7 @@ class _ResetEmailDialogState extends State<_ResetEmailDialog> {
           onPressed: () => Navigator.of(context).pop(),
           child: const Text('Anuluj'),
         ),
-        FilledButton(onPressed: _submit, child: const Text('Wyślij kod')),
+        FilledButton(onPressed: _submit, child: const Text('Wyślij link')),
       ],
     );
   }

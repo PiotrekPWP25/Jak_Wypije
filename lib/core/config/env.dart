@@ -16,6 +16,12 @@ abstract final class Env {
   static bool get hasBackend =>
       supabaseUrl.isNotEmpty && supabaseKey.isNotEmpty;
 
+  /// Deep link the Supabase e-mail links (sign-up confirmation, password
+  /// reset) redirect to. Must be listed in Supabase → Authentication →
+  /// URL Configuration → Redirect URLs, and matches the intent filter in
+  /// AndroidManifest.xml / CFBundleURLTypes in Info.plist.
+  static const String authCallbackUrl = 'pl.hackyeah.jakwypije://auth';
+
   /// Keep in sync with `version` in pubspec.yaml.
   static const String appVersion = '0.4.0';
 }

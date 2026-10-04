@@ -1,11 +1,17 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_controller.dart';
+import 'data/auth/auth_repository.dart';
+import 'features/account/account_providers.dart';
 import 'features/account/auth_screen.dart';
-import 'features/account/code_screen.dart';
+import 'features/account/check_email_screen.dart';
+import 'features/account/new_password_screen.dart';
 import 'features/account/profile_sync.dart';
 import 'features/bar_detail/bar_detail_screen.dart';
 import 'features/barobranie/barobranie_screen.dart';
@@ -106,12 +112,16 @@ final routerProvider = Provider<GoRouter>((ref) {
         ),
       ),
       GoRoute(
-        path: '/auth/code',
-        builder: (context, state) => CodeScreen(
+        path: '/auth/check-email',
+        builder: (context, state) => CheckEmailScreen(
           email: state.uri.queryParameters['email'] ?? '',
           recovery: state.uri.queryParameters['type'] == 'recovery',
           next: state.uri.queryParameters['next'],
         ),
+      ),
+      GoRoute(
+        path: '/auth/new-password',
+        builder: (context, state) => const NewPasswordScreen(),
       ),
       GoRoute(
         path: '/legal/:doc',
@@ -128,16 +138,57 @@ final routerProvider = Provider<GoRouter>((ref) {
   return router;
 });
 
-class JakWypijeApp extends ConsumerWidget {
+final _messengerKey = GlobalKey<ScaffoldMessengerState>();
+
+class JakWypijeApp extends ConsumerStatefulWidget {
   const JakWypijeApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<JakWypijeApp> createState() => _JakWypijeAppState();
+}
+
+class _JakWypijeAppState extends ConsumerState<JakWypijeApp> {
+  StreamSubscription<AuthChangeEvent>? _authEvents;
+
+  @override
+  void initState() {
+    super.initState();
+    _authEvents = ref.read(authRepositoryProvider)?.events().listen(
+      (event) {
+        if (event == AuthChangeEvent.passwordRecovery) _openNewPassword();
+      },
+      // E.g. an expired link from the e-mail.
+      onError: (Object error) => _messengerKey.currentState?.showSnackBar(
+        SnackBar(content: Text(authErrorMessage(error))),
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _authEvents?.cancel();
+    super.dispose();
+  }
+
+  /// A password-reset link opened the app.
+  void _openNewPassword() {
+    final router = ref.read(routerProvider);
+    if (router.routerDelegate.currentConfiguration.uri.path == '/splash') {
+      // The splash would navigate away – it continues there instead.
+      ref.read(passwordRecoveryPendingProvider.notifier).state = true;
+    } else {
+      router.go('/auth/new-password');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     // Keeps the profile in sync with the account for the whole session.
     ref.listen(profileSyncProvider, (_, __) {});
     return MaterialApp.router(
       title: 'JakWypiję',
       debugShowCheckedModeBanner: false,
+      scaffoldMessengerKey: _messengerKey,
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
       themeMode: ref.watch(themeModeProvider),

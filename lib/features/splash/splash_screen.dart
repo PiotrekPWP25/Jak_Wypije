@@ -88,6 +88,12 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     }
     if (!mounted) return;
     // First run (or new Terms): age gate, consents, tourist or local.
+    if (ref.read(passwordRecoveryPendingProvider)) {
+      // A password-reset link started the app.
+      ref.read(passwordRecoveryPendingProvider.notifier).state = false;
+      context.go('/auth/new-password');
+      return;
+    }
     context.go(onboarding ? '/onboarding' : '/start');
   }
 

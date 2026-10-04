@@ -3,7 +3,6 @@ abstract final class Validators {
   static const int minPasswordLength = 8;
 
   static final RegExp _email = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]{2,}$');
-  static final RegExp _code = RegExp(r'^\d{6,10}$');
 
   static String? email(String? value) {
     final text = value?.trim() ?? '';
@@ -25,13 +24,6 @@ abstract final class Validators {
     final text = value?.trim() ?? '';
     if (text.isEmpty) return 'Podaj imię lub pseudonim';
     if (text.length > 24) return 'Maksymalnie 24 znaki';
-    return null;
-  }
-
-  static String? code(String? value) {
-    final text = value?.trim() ?? '';
-    if (text.isEmpty) return 'Wpisz kod z wiadomości';
-    if (!_code.hasMatch(text)) return 'Kod to 6 cyfr z e-maila';
     return null;
   }
 }

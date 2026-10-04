@@ -55,3 +55,7 @@ bool needsOnboarding(UserProfile profile) =>
 
 bool needsConsents(UserProfile profile) =>
     !profile.isAgeConfirmed || !profile.hasAcceptedTerms(currentTermsVersion);
+
+/// Set when a password-reset link opened the app before the splash finished;
+/// the splash then continues to the "new password" screen.
+final passwordRecoveryPendingProvider = StateProvider<bool>((ref) => false);
