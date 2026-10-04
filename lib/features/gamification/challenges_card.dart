@@ -34,8 +34,10 @@ class WeeklyChallengesCard extends ConsumerWidget {
                   ),
                 ),
                 Text(
-                  'nowe za ${left.inDays} '
-                  '${pluralize(left.inDays, 'dzień', 'dni', 'dni')}',
+                  left.inDays == 0
+                      ? 'nowe od jutra'
+                      : 'nowe za ${left.inDays} '
+                          '${pluralize(left.inDays, 'dzień', 'dni', 'dni')}',
                   style: theme.textTheme.labelSmall,
                 ),
               ],

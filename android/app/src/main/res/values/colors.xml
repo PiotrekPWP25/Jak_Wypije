@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="splash_background">#F7F1E5</color>
+    <!-- Adaptive launcher icon background (logo cream). -->
+    <color name="ic_launcher_background">#FAF4E8</color>
 </resources>

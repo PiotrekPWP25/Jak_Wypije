@@ -76,6 +76,16 @@ extension CrowdLevelX on CrowdLevel {
         CrowdLevel.medium => AppColors.amber,
         CrowdLevel.high => AppColors.coral,
       };
+
+  /// Readable text colour for the level on the current surface.
+  Color textColor(Brightness brightness) {
+    if (brightness == Brightness.dark) return color;
+    return switch (this) {
+      CrowdLevel.low => AppColors.greenDeep,
+      CrowdLevel.medium => AppColors.amberDeep,
+      CrowdLevel.high => AppColors.coralDeep,
+    };
+  }
 }
 
 class CrowdBadge extends StatelessWidget {
@@ -85,6 +95,7 @@ class CrowdBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textColor = level.textColor(Theme.of(context).brightness);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
@@ -94,12 +105,12 @@ class CrowdBadge extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.groups, size: 14, color: level.color),
+          Icon(Icons.groups, size: 14, color: textColor),
           const SizedBox(width: 4),
           Text(
             level.label,
             style: TextStyle(
-              color: level.color,
+              color: textColor,
               fontSize: 12,
               fontWeight: FontWeight.w700,
             ),

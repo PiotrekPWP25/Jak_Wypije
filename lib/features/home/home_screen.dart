@@ -23,6 +23,8 @@ import '../friends/leagues.dart';
 import '../gamification/challenges_card.dart';
 import '../gamification/gamification_providers.dart';
 import '../onboarding/user_mode.dart';
+import '../../core/utils/geo.dart';
+import '../../data/models/user_profile.dart';
 import '../account/account_providers.dart';
 import '../profile/profile_providers.dart';
 import '../trips/trips_widgets.dart';
@@ -34,29 +36,28 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final mode = ref.watch(userModeProvider) ?? UserMode.tourist;
+    // Most useful first; the crowd overview closes the screen.
     final sections = mode == UserMode.tourist
         ? const <Widget>[
             SectionHeader(title: 'Gotowe trasy'),
             TripsCarousel(preferred: TripAudience.tourist),
-            SectionHeader(title: 'Must-see w pobliżu'),
-            _MustSeeCarousel(),
-            _CityNowCard(),
+            _MustSeeSection(),
             _PassportCard(),
-            SectionHeader(title: 'Ukryte perełki'),
-            _GemsCarousel(),
+            _GemsSection(),
+            _CityNowCard(),
           ]
         : const <Widget>[
-            SectionHeader(title: 'Wyzwania tygodnia'),
+            SizedBox(height: 16),
             WeeklyChallengesCard(),
             SectionHeader(title: 'W tym tygodniu'),
             UpcomingEventsCard(),
             _HappyHoursSection(),
             _NewPlacesSection(),
             _UnvisitedDistrictsCard(),
-            _CityNowCard(),
+            _LeagueCard(),
             SectionHeader(title: 'Trasy dla mieszkańców'),
             TripsCarousel(preferred: TripAudience.local),
-            _LeagueCard(),
+            _CityNowCard(),
           ];
 
     return Scaffold(
@@ -103,7 +104,12 @@ class _Header extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '${_greeting()}, $name!',
+                  // No "Dobry wieczór, Ty!" before the user sets a name.
+                  name == UserProfile.defaultName
+                      ? '${_greeting()}!'
+                      : '${_greeting()}, $name!',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: theme.textTheme.titleLarge,
                 ),
                 Text(
@@ -173,8 +179,8 @@ class _EveningCard extends ConsumerWidget {
               const SizedBox(height: 6),
               if (stops.isEmpty)
                 const Text(
-                  'Połącz atrakcje i bary w jedną trasę albo wybierz gotową. '
-                  'Policzymy spacer, budżet i powrót do domu.',
+                  'Atrakcje i lokale w jednej trasie. Policzymy spacer, '
+                  'budżet i powrót.',
                 )
               else ...[
                 Text(
@@ -250,6 +256,7 @@ class _QuickActions extends ConsumerWidget {
                 icon: Icons.qr_code_scanner,
                 label: 'Melduj się',
                 color: AppColors.amber,
+                onColor: AppColors.brown,
                 onTap: () => context.push('/checkin'),
               ),
             ),
@@ -258,7 +265,7 @@ class _QuickActions extends ConsumerWidget {
               child: _ActionTile(
                 icon: Icons.menu_book_outlined,
                 label: 'Paszport',
-                color: AppColors.green,
+                color: AppColors.greenDeep,
                 onTap: () => context.push('/passport'),
               ),
             ),
@@ -284,11 +291,15 @@ class _ActionTile extends StatelessWidget {
     required this.label,
     required this.color,
     required this.onTap,
+    this.onColor = Colors.white,
   });
 
   final IconData icon;
   final String label;
+
+  /// Solid circle behind the icon, [onColor] for the icon itself.
   final Color color;
+  final Color onColor;
   final VoidCallback onTap;
 
   @override
@@ -303,8 +314,9 @@ class _ActionTile extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               CircleAvatar(
-                backgroundColor: color.withAlpha(45),
-                foregroundColor: color,
+                radius: 24,
+                backgroundColor: color,
+                foregroundColor: onColor,
                 child: Icon(icon),
               ),
               const SizedBox(height: 8),
@@ -324,52 +336,93 @@ class _ActionTile extends StatelessWidget {
   }
 }
 
-/// Nearest landmarks from the user (or the route's last stop).
-class _MustSeeCarousel extends ConsumerWidget {
-  const _MustSeeCarousel();
+/// "Wszystkie" link to the Bary tab, showing bars or landmarks.
+class _SeeAllButton extends ConsumerWidget {
+  const _SeeAllButton({required this.landmarks});
+
+  final bool landmarks;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return TextButton(
+      onPressed: () {
+        ref.read(showLandmarksProvider.notifier).set(landmarks);
+        context.go('/bars');
+      },
+      child: const Text('Wszystkie'),
+    );
+  }
+}
+
+/// Nearest landmarks from the user in Kraków (or the route's last stop,
+/// else Rynek).
+class _MustSeeSection extends ConsumerWidget {
+  const _MustSeeSection();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final listings = ref.watch(landmarkListingsProvider).valueOrNull ??
         const <LandmarkListing>[];
-    if (listings.isEmpty) return const SizedBox(height: 8);
-    return _HorizontalCards(
+    if (listings.isEmpty) return const SizedBox.shrink();
+    final fromCenter = ref.watch(referencePointProvider).point == krakowCenter;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        for (final listing in listings.take(8))
-          _MiniCard(
-            emoji: listing.landmark.emoji,
-            title: listing.landmark.name,
-            subtitle: '${listing.landmark.category.label} · '
-                '${formatDistance(listing.distanceMeters)}',
-            footer: listing.landmark.ticketLabel,
-            onTap: () => context.push('/landmark/${listing.landmark.id}'),
-          ),
+        SectionHeader(
+          title: fromCenter ? 'Must-see od Rynku' : 'Must-see w pobliżu',
+          trailing: const _SeeAllButton(landmarks: true),
+        ),
+        _HorizontalCards(
+          children: [
+            for (final listing in listings.take(8))
+              _MiniCard(
+                emoji: listing.landmark.emoji,
+                color: AppColors.green,
+                chip: formatDistance(listing.distanceMeters),
+                title: listing.landmark.name,
+                subtitle: listing.landmark.category.label,
+                footer: listing.landmark.ticketLabel,
+                onTap: () => context.push('/landmark/${listing.landmark.id}'),
+              ),
+          ],
+        ),
       ],
     );
   }
 }
 
-class _GemsCarousel extends ConsumerWidget {
-  const _GemsCarousel();
+class _GemsSection extends ConsumerWidget {
+  const _GemsSection();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final listings = ref.watch(barListingsProvider).valueOrNull ?? const [];
     final gems = listings.where((l) => l.bar.isHiddenGem).toList()
       ..sort((a, b) => (b.friendsRating ?? 0).compareTo(a.friendsRating ?? 0));
-    if (gems.isEmpty) return const SizedBox(height: 8);
-    return _HorizontalCards(
+    if (gems.isEmpty) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        for (final listing in gems)
-          _MiniCard(
-            emoji: listing.bar.emoji,
-            title: listing.bar.name,
-            subtitle: listing.bar.district,
-            footer: listing.friendsRating == null
-                ? 'Ogólnie ${formatRating(listing.bar.publicRating)}'
-                : 'Znajomi ${formatRating(listing.friendsRating!)}',
-            onTap: () => context.push('/bar/${listing.bar.id}'),
-          ),
+        const SectionHeader(
+          title: 'Ukryte perełki',
+          trailing: _SeeAllButton(landmarks: false),
+        ),
+        _HorizontalCards(
+          children: [
+            for (final listing in gems)
+              _MiniCard(
+                emoji: listing.bar.emoji,
+                color: AppColors.amber,
+                chip: formatDistance(listing.distanceMeters),
+                title: listing.bar.name,
+                subtitle: listing.bar.district,
+                footer: listing.friendsRating == null
+                    ? '★ ${formatRating(listing.bar.publicRating)} ogólnie'
+                    : '★ ${formatRating(listing.friendsRating!)} znajomi',
+                onTap: () => context.push('/bar/${listing.bar.id}'),
+              ),
+          ],
+        ),
       ],
     );
   }
@@ -397,11 +450,11 @@ class _HappyHoursSection extends ConsumerWidget {
             for (final listing in listings)
               _MiniCard(
                 emoji: listing.bar.emoji,
+                color: AppColors.coral,
+                chip: listing.isHappyHour ? 'teraz' : null,
                 title: listing.bar.name,
                 subtitle: listing.bar.happyHour!.label,
-                footer: listing.isHappyHour
-                    ? '🔥 trwa teraz'
-                    : '🕒 ${listing.bar.happyHour!.hours}',
+                footer: '🕒 ${listing.bar.happyHour!.hours}',
                 onTap: () => context.push('/bar/${listing.bar.id}'),
               ),
           ],
@@ -429,6 +482,7 @@ class _NewPlacesSection extends ConsumerWidget {
             for (final place in places)
               _MiniCard(
                 emoji: place.emoji,
+                color: AppColors.night,
                 title: place.name,
                 subtitle: place.district,
                 footer: 'Nowe miejsce',
@@ -574,7 +628,6 @@ class _CityNowCard extends ConsumerWidget {
     final sorted = [...zones]..sort(
         (a, b) => b.crowdAt(clock.minutes).compareTo(a.crowdAt(clock.minutes)),
       );
-    final busiest = sorted.first;
     final calmest = sorted.last;
 
     return Padding(
@@ -604,7 +657,7 @@ class _CityNowCard extends ConsumerWidget {
                 ],
               ),
               const SizedBox(height: 12),
-              for (final zone in sorted.take(5))
+              for (final zone in sorted.take(3))
                 _ZoneCrowdRow(zone: zone, minutes: clock.minutes),
               const SizedBox(height: 8),
               Container(
@@ -615,8 +668,8 @@ class _CityNowCard extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: Text(
-                  '${busiest.name}: tłoczno. Spokojniej jest w okolicy: '
-                  '${calmest.name}. Za meldunek poza tłokiem +10 pkt.',
+                  'Spokojniej: ${calmest.name} · +10 pkt za meldunek poza '
+                  'tłokiem',
                   style: theme.textTheme.bodySmall
                       ?.copyWith(fontWeight: FontWeight.w700),
                 ),
@@ -681,7 +734,10 @@ class _ZoneCrowdRow extends StatelessWidget {
             child: Text(
               level.label,
               textAlign: TextAlign.end,
-              style: TextStyle(color: level.color, fontWeight: FontWeight.w800),
+              style: TextStyle(
+                color: level.textColor(Theme.of(context).brightness),
+                fontWeight: FontWeight.w800,
+              ),
             ),
           ),
         ],
@@ -751,71 +807,117 @@ class _HorizontalCards extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 168,
+      height: 182,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),
         itemCount: children.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 10),
+        separatorBuilder: (_, __) => const SizedBox(width: 12),
         itemBuilder: (context, index) =>
-            SizedBox(width: 150, child: children[index]),
+            SizedBox(width: 168, child: children[index]),
       ),
     );
   }
 }
 
+/// Compact place card: coloured strip with the emoji (and an optional chip,
+/// e.g. the distance), name, one-line subtitle and an accent footer.
 class _MiniCard extends StatelessWidget {
   const _MiniCard({
     required this.emoji,
+    required this.color,
     required this.title,
     required this.subtitle,
     required this.footer,
     required this.onTap,
+    this.chip,
   });
 
   final String emoji;
+  final Color color;
   final String title;
   final String subtitle;
   final String footer;
+  final String? chip;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final chip = this.chip;
     return Card(
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(emoji, style: const TextStyle(fontSize: 30)),
-              const SizedBox(height: 6),
-              Text(
-                title,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.titleSmall
-                    ?.copyWith(fontWeight: FontWeight.w800),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Container(
+              height: 64,
+              color: color.withAlpha(60),
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Row(
+                children: [
+                  Text(emoji, style: const TextStyle(fontSize: 30)),
+                  const Spacer(),
+                  if (chip != null)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.surfaceContainerLowest,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        chip,
+                        style: theme.textTheme.labelSmall
+                            ?.copyWith(fontWeight: FontWeight.w800),
+                      ),
+                    ),
+                ],
               ),
-              Text(
-                subtitle,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.bodySmall,
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        height: 1.2,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    const Spacer(),
+                    Text(
+                      footer,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.accentText(theme.brightness),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              const Spacer(),
-              Text(
-                footer,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.labelSmall
-                    ?.copyWith(fontWeight: FontWeight.w800),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

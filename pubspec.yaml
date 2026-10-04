@@ -33,3 +33,5 @@ flutter:
     - assets/data/
     - assets/images/
     - assets/legal/
+    # Nunito bundled offline (OFL) – google_fonts uses these instead of downloading.
+    - assets/google_fonts/

@@ -14,6 +14,16 @@ abstract final class AppColors {
   /// Indigo – night quiet zones and night transport.
   static const Color night = Color(0xFF5C6BC0);
 
+  // Darker variants for TEXT on light (cream) surfaces – the brand amber,
+  // green and coral are too light for text there (contrast ≥ 4.5:1 here).
+  static const Color amberDeep = Color(0xFF8A5A00);
+  static const Color greenDeep = Color(0xFF1E6B2F);
+  static const Color coralDeep = Color(0xFFB23A2C);
+
+  /// Accent colour for text: amber on dark surfaces, deep amber on light.
+  static Color accentText(Brightness brightness) =>
+      brightness == Brightness.dark ? amber : amberDeep;
+
   /// Logo outline brown.
   static const Color brown = Color(0xFF3B2314);
   static const Color brownSoft = Color(0xFF6B5443);

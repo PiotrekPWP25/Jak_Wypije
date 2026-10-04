@@ -58,29 +58,38 @@ class EventTile extends ConsumerWidget {
   }
 }
 
-/// "W tym tygodniu" card for the Start screen.
-class UpcomingEventsCard extends ConsumerWidget {
-  const UpcomingEventsCard({super.key, this.limit = 4});
+/// "W tym tygodniu" card for the Start screen: the next few events, the
+/// rest behind "Pokaż więcej".
+class UpcomingEventsCard extends ConsumerStatefulWidget {
+  const UpcomingEventsCard({super.key, this.limit = 3});
 
   final int limit;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<UpcomingEventsCard> createState() => _UpcomingEventsCardState();
+}
+
+class _UpcomingEventsCardState extends ConsumerState<UpcomingEventsCard> {
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
     final upcoming = ref.watch(upcomingEventsProvider);
     if (upcoming.isEmpty) return const SizedBox.shrink();
+    final hidden = upcoming.length - widget.limit;
+    final shown = _expanded ? upcoming : upcoming.take(widget.limit);
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
         children: [
-          for (final item in upcoming.take(limit)) EventTile(upcoming: item),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-            child: Text(
-              'Wydarzenia przykładowe (demo) – docelowo z kalendarza miasta '
-              'i od lokali partnerskich.',
-              style: Theme.of(context).textTheme.labelSmall,
+          for (final item in shown) EventTile(upcoming: item),
+          if (hidden > 0)
+            TextButton.icon(
+              onPressed: () => setState(() => _expanded = !_expanded),
+              icon: Icon(_expanded ? Icons.expand_less : Icons.expand_more),
+              label: Text(_expanded ? 'Pokaż mniej' : 'Pokaż więcej ($hidden)'),
             ),
-          ),
+          const SizedBox(height: 4),
         ],
       ),
     );

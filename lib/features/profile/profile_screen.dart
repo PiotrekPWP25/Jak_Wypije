@@ -130,8 +130,8 @@ class ProfileScreen extends ConsumerWidget {
                 ),
                 trailing: Text(
                   '+${checkIn.points} pkt',
-                  style: const TextStyle(
-                    color: AppColors.amber,
+                  style: TextStyle(
+                    color: AppColors.accentText(Theme.of(context).brightness),
                     fontWeight: FontWeight.w900,
                   ),
                 ),
@@ -177,7 +177,7 @@ class _ProfileHeader extends StatelessWidget {
                 Text(
                   'Poziom ${level.number} · ${level.title}',
                   style: theme.textTheme.bodyMedium?.copyWith(
-                    color: AppColors.amber,
+                    color: AppColors.accentText(theme.brightness),
                     fontWeight: FontWeight.w800,
                   ),
                 ),
@@ -241,7 +241,8 @@ class _StatsGrid extends StatelessWidget {
                       ),
                       child: Column(
                         children: [
-                          Icon(icon, color: AppColors.amber),
+                          Icon(icon,
+                              color: AppColors.accentText(theme.brightness)),
                           const SizedBox(height: 4),
                           Text(
                             value,

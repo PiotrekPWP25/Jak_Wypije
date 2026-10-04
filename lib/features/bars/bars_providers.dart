@@ -28,10 +28,20 @@ final distanceReferenceProvider =
 
 typedef ReferencePoint = ({LatLng point, String label});
 
+/// Beyond this distance from Rynek the user is not in Kraków (e.g. planning
+/// a trip from home), so distances are measured from the centre instead.
+const double cityRadiusMeters = 30000;
+
+/// [position] if it is in Kraków, else `null`.
+LatLng? positionInCity(LatLng? position) => position == null ||
+        haversineMeters(position, krakowCenter) > cityRadiusMeters
+    ? null
+    : position;
+
 /// Previous (last) bar on the Barobranie route, else the user, else Rynek.
 final referencePointProvider = Provider<ReferencePoint>((ref) {
   final mode = ref.watch(distanceReferenceProvider);
-  final position = ref.watch(userPositionProvider).valueOrNull;
+  final position = positionInCity(ref.watch(userPositionProvider).valueOrNull);
   const center = (point: krakowCenter, label: 'Rynek Główny');
   final me =
       position == null ? center : (point: position, label: 'Twoja lokalizacja');

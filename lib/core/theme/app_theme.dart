@@ -117,6 +117,13 @@ abstract final class AppTheme {
           textStyle: text.labelLarge?.copyWith(fontWeight: FontWeight.w800),
         ),
       ),
+      // Links and text buttons: brand amber is unreadable on cream.
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: AppColors.accentText(scheme.brightness),
+          textStyle: text.labelLarge?.copyWith(fontWeight: FontWeight.w800),
+        ),
+      ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           shape: const StadiumBorder(),

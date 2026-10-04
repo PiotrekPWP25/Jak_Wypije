@@ -42,7 +42,7 @@ class FriendsScreen extends ConsumerWidget {
         children: [
           const _LeagueHeader(),
           _StreakBanner(weeks: streak),
-          const SectionHeader(title: 'Wyzwania tygodnia'),
+          const SizedBox(height: 16),
           const WeeklyChallengesCard(),
           const SectionHeader(title: 'Tabela tygodnia'),
           _LeagueTableCard(table: table),
